@@ -1,0 +1,37 @@
+# test_rankfl.yaml
+
+# resource config
+
+
+# checkpoint config
+model: vgg16
+use_gpu: True
+gpu_ids: [0]
+
+# dataset config
+dataset: cifar10
+batch_size: 32
+
+# optimizer config
+# optim: sgd
+optim: sgd_pfl
+learning_rate: 0.1
+momentum: 0.9
+weight_decay: 0.00001
+loss_func: cross_entropy
+
+# scheduler config
+scheduler: step_lr
+step_size: 1
+gamma: 0.99309
+
+# federal config
+non_iid: hetro
+workers: 100
+active_workers: 10
+federal_round: 100
+local_epoch: 5
+batch_limit: 99999
+test_batch_limit: 5
+coff: 3
+mu: 0.1
