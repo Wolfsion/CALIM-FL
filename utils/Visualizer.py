@@ -1,12 +1,14 @@
 from typing import List, Tuple
 
 import pandas as pd
+
 from matplotlib import pyplot as plt
 import seaborn as sns
 
 from utils.DataExtractor import Extractor
 from env.running_env import *
 from utils.objectIO import pickle_load
+from utils.objectIO import fetch_path_id
 
 
 def text_info(title: str, x_label: str, y_label: str):
@@ -31,12 +33,12 @@ def text_info(title: str, x_label: str, y_label: str):
 '''
 class HRankBoard:
     def __init__(self):
+        plt.switch_backend('agg')
         sns.set(style='darkgrid', color_codes=True)
         plt.figure(figsize=(20, 15))
         self.title = 'vgg16-hrank'
 
-    def simp_rank_img(self):
-        path = r"/home/xd/la/projects/HRankFL/res/milestone/vgg_16_bn/2022.07.15_22-21-23.npy"
+    def simp_rank_img(self, path: str):
         hrank_list = pickle_load(path)
         hr = []
         for rank in hrank_list:
@@ -47,28 +49,25 @@ class HRankBoard:
 
         df = pd.DataFrame(list(zip(hr, layer_prefix)), columns=['Rank', 'Layer'])
         sns.boxplot(x='Layer', y='Rank', data=df)
-        plt.savefig(file_repo.new_img("box_plot")[0])
+        label = fetch_path_id(path)
+        plt.savefig(file_repo.new_img(f"{label}-box")[0])
         plt.clf()
         sns.swarmplot(x='Layer', y='Rank', data=df)
-        plt.savefig(file_repo.new_img("scatter_plot")[0])
+        plt.savefig(file_repo.new_img(f"{label}-scatter")[0])
+        plt.clf()
 
-    def simp_acc_compare_img(self):
-        a = [1, 2, 3, 4, 5]
-        b = [0, 3, 0, 6, 0]
-        c = [4, 4, 5, 6, 7]
-
-        hue_a = [[num, ind + 1, 'a'] for ind, num in enumerate(a)]
-        hue_b = [[num, ind + 1, 'b'] for ind, num in enumerate(b)]
-        hue_c = [[num, ind + 1, 'c'] for ind, num in enumerate(c)]
-
-        hue_a.extend(hue_b)
-        hue_a.extend(hue_c)
-
-        df = pd.DataFrame(hue_a, columns=['Acc', 'Epoch', 'Class'])
-
+    # key->value; key:str value:str
+    # key:acc_name, value:acc_txt_filepath
+    def simp_acc_compare_img(self, **paths):
+        pd_ori_data = []
+        for key, path in paths:
+            pickle_obj = pickle_load(path)
+            sub_list = [[num, ind + 1, key] for ind, num in enumerate(pickle_obj)]
+            pd_ori_data.extend(sub_list)
+        df = pd.DataFrame(pd_ori_data, columns=['Acc', 'Epoch', 'Class'])
         sns.set(style='darkgrid', color_codes=True)
         sns.lineplot(data=df, x="Epoch", y="Acc", hue="Class")
-        plt.show()
+        plt.savefig(file_repo.new_img("acc_imp")[0])
 
 
 class VisBoard:

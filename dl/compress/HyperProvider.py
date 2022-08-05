@@ -20,15 +20,15 @@ class IntervalProvider:
         self.sum_limit = sum_limit
         self.cont_list = []
 
-    def is_timing(self, clients_ranks_dict: list, num_clients: int = None):
+    def is_timing(self, clients_ranks_list: list, num_clients: int = None):
         if num_clients is None:
-            num_clients = len(clients_ranks_dict)
-        num_conv_layers = len(clients_ranks_dict[0].keys())
+            num_clients = len(clients_ranks_list)
+        num_conv_layers = len(clients_ranks_list[0].keys())
         combine_num = comb(num_clients, 2)
         clients_ranks = [[] for _ in range(num_conv_layers)]
         for i in range(num_clients):
             for j in range(num_conv_layers):
-                clients_ranks[j].append(clients_ranks_dict[i][j])
+                clients_ranks[j].append(clients_ranks_list[i][j])
 
         sum_distance = 0
         for j in range(num_conv_layers):
@@ -45,16 +45,16 @@ class IntervalProvider:
         else:
             return True
 
-    def is_timing_simple(self, ranks_dict: list = None):
-        if ranks_dict is None:
-            ranks_dict = self.cont_list
-        if len(ranks_dict) == self.SIMP_LEN:
-            return self.is_timing(ranks_dict, self.SIMP_LEN)
+    def is_timing_simple(self, ranks_list: list = None):
+        if ranks_list is None:
+            ranks_list = self.cont_list
+        if len(ranks_list) == self.SIMP_LEN:
+            return self.is_timing(ranks_list, self.SIMP_LEN)
         else:
-            global_logger.info(f"#len of cont_list is not 2.#")
+            global_logger.info(f"Length of cont_list is not 2.")
             return self.NULL_NUM
 
-    def push_simp_container(self, ranks: dict):
+    def push_simp_container(self, ranks: list):
         if len(self.cont_list) < 2:
             self.cont_list.append(ranks)
         else:
@@ -65,6 +65,7 @@ class IntervalProvider:
 class DatasetSplit(Dataset):
     """An abstract Dataset class wrapped around Pytorch Dataset class.
     """
+
     def __init__(self, dataset, idxs):
         self.dataset = dataset
         self.idxs = [int(i) for i in idxs]
@@ -75,7 +76,6 @@ class DatasetSplit(Dataset):
     def __getitem__(self, item):
         image, label = self.dataset[self.idxs[item]]
         return torch.tensor(image), torch.tensor(label)
-
 
 
 def is_conv(layer):

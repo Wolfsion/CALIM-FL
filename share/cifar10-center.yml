@@ -1,13 +1,11 @@
 # test_rankfl.yaml
 
 # resource config
-exp_name: b1n1
+exp_name: b2n2
 
 # checkpoint config
 model: vgg16
 pre_train: True
-use_gpu: True
-gpu_ids: [0]
 
 # dataset config
 dataset: cifar10
@@ -17,24 +15,17 @@ batch_size: 16
 # optim: sgd
 optim: sgd
 learning_rate: 0.1
-momentum: 0.9
-weight_decay: 0.00001
-loss_func: cross_entropy
 
 # scheduler config
 scheduler: step_lr
-step_size: 1
-gamma: 0.999999
+warm_steps: 10
 
 # prune config
 rank_path: none
-info_norm: 1
-backward: 1
+info_norm: 2
+backward: 2
 en_alpha: 0.5
 en_shrink: 0.95
 
 # federal config
 local_epoch: 300
-batch_limit: 999999
-coff: 3
-mu: 0.1

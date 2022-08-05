@@ -1,6 +1,5 @@
 import math
-from typing import Iterator, Any
-import torch
+from typing import Iterator
 import torch.nn as nn
 import torch.utils.data as tdata
 
@@ -38,9 +37,7 @@ class SingleCell:
 
     # init
     def init_model_dataloader(self):
-        self.model = create_model(args.model)
-        if args.pre_train:
-            pre_train_model(self.model, file_repo.model_path)
+        self.model = create_model(args.model, num_classes=args.num_classes)
         if self.dataloader is None:
             self.dataloader = get_data_loader(args.dataset, data_type="train",
                                               batch_size=args.batch_size, shuffle=True)
@@ -51,8 +48,10 @@ class SingleCell:
         self.wrapper = VWrapper(self.model, self.dataloader,
                                 args.optim, args.scheduler, args.loss_func)
         self.wrapper.init_device(args.use_gpu, args.gpu_ids)
-        self.wrapper.init_optim(args.learning_rate, args.momentum, args.weight_decay)
-        self.wrapper.init_scheduler_loss(args.step_size, args.gamma)
+        self.wrapper.init_optim(args.learning_rate, args.momentum, args.weight_decay, args.nesterov)
+        self.wrapper.init_scheduler_loss(args.step_size, args.gamma, args.local_epoch, args.warm_steps)
+        if args.pre_train:
+            self.wrapper.load_checkpoint(file_repo.model_path)
 
     def init_prune(self):
         self.prune_ext = HRank(self.wrapper)
@@ -61,8 +60,8 @@ class SingleCell:
     def sync_model(self):
         if self.model.state_dict() != self.wrapper.model.state_dict():
             self.wrapper.model.load_state_dict(self.model.state_dict())
-        if self.model.state_dict() != self.prune_ext.model.state_dict():
-            self.prune_ext.model.load_state_dict(self.model.state_dict())
+        # if self.model.state_dict() != self.prune_ext.model.state_dict():
+        #     self.prune_ext.model.load_state_dict(self.model.state_dict())
 
     def access_model(self) -> nn.Module:
         return self.wrapper.access_model()
@@ -97,8 +96,10 @@ class SingleCell:
         self.wrapper.show_lr()
 
     def prune_model(self):
-        self.prune_ext.get_rank()
-        self.prune_ext.rank_plus()
-        # self.prune_ext.rank_plus2()
+        path_id = self.prune_ext.get_rank()
+        args.rank_norm_path = file_repo.fetch_path(path_id)
+        path_id = self.prune_ext.rank_plus(info_norm=args.info_norm, backward=args.backward)
+        args.rank_plus_path = file_repo.fetch_path(path_id)
+
         self.prune_ext.mask_prune(vgg16_candidate_rate)
         self.prune_ext.warm_up(wu_epoch, wu_batch)

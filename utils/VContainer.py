@@ -4,13 +4,15 @@ from utils.objectIO import pickle_mkdir_save
 
 
 class VContainer:
-    ERROR_MESS1 = "The element is not fit."
+    ERROR_MESS1 = "The element type is not same as the former."
 
     def __init__(self):
         self.container = OrderedDict()
+        self.keys = []
 
     def flash(self, key: str, element):
         if key not in self.container.keys():
+            self.keys.append(key)
             self.container[key] = []
             self.container[key].append(element)
         else:
@@ -21,6 +23,7 @@ class VContainer:
         path = file_repo.new_acc(key)[0]
         pickle_mkdir_save(self.container[key], path)
 
-    def load(self, file_path: str):
-        pass
+    def store_all(self):
+        for key in self.keys:
+            self.store(key)
 

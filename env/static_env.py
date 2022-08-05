@@ -60,3 +60,6 @@ YAML_PATH = r'share/default_config.yml'
 # Warm-up config
 wu_epoch = 5
 wu_batch = 8192
+
+# acc_info
+print_interval = 10

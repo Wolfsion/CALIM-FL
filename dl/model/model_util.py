@@ -6,7 +6,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
-from dl.model.mobilenet import MobileNetV2
+from dl.model.mobilenetV2 import MobileNetV2
 from dl.model.resnet import ResNet, BasicBlock
 from dl.model.vgg import VGG16, VGG11
 from env.running_env import global_logger
@@ -31,15 +31,15 @@ def initialize(model: nn.Module) -> nn.Module:
 
 def create_model(model: VModel, compress_rate=ORIGIN_CP_RATE, num_classes=10) -> nn.Module:
     if model == VModel.VGG11:
-        return initialize(VGG11(compress_rate=compress_rate))
+        return initialize(VGG11(compress_rate=compress_rate, num_classes=num_classes))
     elif model == VModel.VGG16:
-        return initialize(VGG16(compress_rate=compress_rate))
+        return initialize(VGG16(compress_rate=compress_rate, num_classes=num_classes))
     elif model == VModel.ResNet56:
-        return initialize(ResNet(BasicBlock, 56, compress_rate=compress_rate, num_classes=100))
+        return initialize(ResNet(BasicBlock, 56, compress_rate=compress_rate, num_classes=num_classes))
     elif model == VModel.ResNet110:
-        return initialize(ResNet(BasicBlock, 56, compress_rate=compress_rate, num_classes=100))
+        return initialize(ResNet(BasicBlock, 110, compress_rate=compress_rate, num_classes=num_classes))
     elif model == VModel.MobileNetV2:
-        return initialize(MobileNetV2(compress_rate=compress_rate, width_mult=1))
+        return initialize(MobileNetV2(compress_rate=compress_rate, num_classes=num_classes))
 
 
 def load_model_params(load_model: nn.Module, source_model: nn.Module):
@@ -71,6 +71,5 @@ def dict_diff(dict1: dict, dict2: dict):
 
 
 def pre_train_model(model_obj: nn.Module, path_pt: str):
-    checkpoint = torch.load(path_pt, map_location=torch.device('cpu'))
-    model_key = 'state_dict'
-    model_obj.load_state_dict(checkpoint[model_key])
+    model_weights = torch.load(path_pt, map_location=torch.device('cpu'))
+    model_obj.load_state_dict(model_weights)

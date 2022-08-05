@@ -28,7 +28,8 @@ class VOptimizer(Enum):
     LOWER = 0
     SGD = 1
     SGD_PFL = 2
-    UPPER = 3
+    ADAM = 3
+    UPPER = 4
 
 
 # Optimizer Type
@@ -36,7 +37,9 @@ class VOptimizer(Enum):
 class VScheduler(Enum):
     LOWER = 0
     StepLR = 1
-    UPPER = 2
+    CosineAnnealingLR = 2
+    WarmUPCosineLR = 3
+    UPPER = 4
 
 
 # loss func

@@ -1,11 +1,6 @@
 from random import random
-
-from env.running_env import file_repo
-from utils.PathManager import FileType
-# from utils.DataExtractor import Extractor
-# from utils.Visualizer import VisBoard
 from utils.Visualizer import HRankBoard
-from utils.objectIO import pickle_mkdir_save
+from env.running_env import args, file_repo
 
 
 def random_list(length=100):
@@ -20,25 +15,15 @@ def get_lists():
     return lists
 
 
-# def test_sns():
-#     repo = Extractor()
-#     vis = VisBoard(repo)
-#     vis.single_var_dist("F", "k")
-#     #vis.double_vars_dist("F", "kr")
-#     #vis.double_vars_regression("F", "kr")
-
-def test_enum():
-    print(FileType.LOG_TYPE)
-    print(type(FileType.LOG_TYPE))
-
-def test_path_manager():
-    lis = [1, 2, 3]
-    pickle_mkdir_save(lis, file_repo.new_rank()[0])
-
 def test_hrank_visual():
     sim = HRankBoard()
-    sim.simp_rank_img()
+    sim.simp_acc_compare_img()
+
+def test_rank_img():
+    board = HRankBoard()
+    board.simp_rank_img(args.rank_norm_path)
+    board.simp_rank_img(args.rank_plus_path)
 
 def main():
-    test_hrank_visual()
+    test_rank_img()
 

@@ -1,0 +1,33 @@
+# test_rankfl.yaml
+
+# resource config
+exp_name: cifar100-mobilenetV2
+
+# checkpoint config
+model: mobilenetV2
+
+# dataset config
+dataset: cifar100
+batch_size: 128
+
+# optimizer config
+# optim: sgd
+optim: sgd
+learning_rate: 0.1
+
+# scheduler config
+scheduler: warmup_cos_lr
+warm_steps: 5
+
+# federal config
+non_iid: hetro
+workers: 100
+active_workers: 10
+federal_round: 100
+
+## federal simulation
+# local_epoch: 5
+
+## center train
+local_epoch: 200
+test_batch_limit: 5

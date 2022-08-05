@@ -19,11 +19,21 @@ DATA_HELP = ["", ""]
 # Val[0]: datatype, Val[1]: data domain
 ARGS_STANDARD = dict(zip(MUST_KEYS, zip(DATA_TYPE, DATA_DOMAIN, DATA_HELP)))
 
-DEFAULT_ARGS = {"optim": "sgd",
-                "learning_rate": 0.1,
+DEFAULT_ARGS = {
+                "use_gpu": True,
+                "gpu_ids": [0],
+
+                "learning_rate": 0.01,
                 "momentum": 0.9,
-                "weight_decay": 1e-5,
+                "weight_decay": 1e-4,
+                "nesterov": True,
+
                 "step_size": 1,
                 "gamma": 0.5 ** (1 / 100),
-                "use_gpu": True,
-                "gpu_ids": [0]}
+
+                "loss_func": 'cross_entropy',
+
+                "batch_limit": 99999,
+                "coff": 3,
+                "mu": 0.1
+}

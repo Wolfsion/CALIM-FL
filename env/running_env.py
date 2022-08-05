@@ -2,12 +2,10 @@ from env import yaml2args
 from env.support_config import VModel
 from utils.PathManager import HRankPathManager
 from utils.Vlogger import VLogger
-from env.custom_path import *
-
-config = r'share/cifar10-center.yml'
+from custom_path import *
 
 # Args
-args = yaml2args.ArgRepo(config)
+args = yaml2args.ArgRepo(test_config)
 args.activate()
 
 ### 

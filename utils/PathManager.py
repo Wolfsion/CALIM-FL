@@ -11,6 +11,8 @@ from utils.objectIO import pickle_mkdir_save, pickle_load, touch_file, create_pa
 # 将milestone内容迁移到checkpoint对应模型下
 # checkout 当目录不存在时创建
 # 对象的序列化与反序列化实现
+simp_time_stamp_index1 = 5
+simp_time_stamp_index2 = 10
 
 
 @unique
@@ -24,16 +26,23 @@ class FileType(Enum):
     CHECKPOINT_TYPE = '.snap'
 
 
-def curt_time_stamp():
+def curt_time_stamp(simp: bool = False):
     pattern = '%Y.%m.%d_%H-%M-%S'
-    return time.strftime(pattern, time.localtime(time.time()))
+    time_str = time.strftime(pattern, time.localtime(time.time()))
+    if simp:
+        return time_str[simp_time_stamp_index1: simp_time_stamp_index2]
+    else:
+        return time_str
 
 
-def file_name(file_type: FileType, name: str = None) -> str:
+def file_name(file_type: FileType, name: str = None, ext_time: bool = True) -> str:
     if name is None:
         return f"{curt_time_stamp()}{file_type.value}"
     else:
-        return f"{name}{file_type.value}"
+        if ext_time:
+            return f"{name}---{curt_time_stamp(ext_time)}{file_type.value}"
+        else:
+            return f"{name}{file_type.value}"
 
 
 class PathManager(ABC):
@@ -92,8 +101,9 @@ class PathManager(ABC):
         file_id = self.sync_path(new_file)
         return new_file, file_id
 
-    def new_checkpoint(self, name: str = None) -> (str, int):
-        new_file = os.path.join(self.checkpoint_path, file_name(FileType.CHECKPOINT_TYPE, name))
+    def new_checkpoint(self, name: str = None, fixed: bool = False) -> (str, int):
+        new_file = os.path.join(self.checkpoint_path,
+                                file_name(FileType.CHECKPOINT_TYPE, name, not fixed))
         file_id = self.sync_path(new_file)
         return new_file, file_id
 

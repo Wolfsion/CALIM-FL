@@ -126,7 +126,6 @@ class ResNet(nn.Module):
         else:
             self.linear = nn.Linear(64 * BasicBlock.expansion, num_classes)
 
-
     def _make_layer(self, block, blocks_num, stride):
         layers = []
         layers.append(block(self.mid_channel[self.layer_num - 1], self.overall_channel[self.layer_num - 1],

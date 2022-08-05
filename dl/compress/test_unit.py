@@ -7,7 +7,7 @@ from env.running_env import *
 
 from dl.compress.Sparse import TopKSparse
 from dl.compress.Quantization import QuantizationSGD
-from dl.compress.compress_utils import get_size
+from dl.compress.compress_util import get_size
 
 # loader is not proper for single train
 # global_loader = loader_pool(3, 64)

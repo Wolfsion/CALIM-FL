@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as tdata
 
+from dl.compress.compress_util import arrays_normalization, calculate_average_value
 from dl.model.ModelExt import Extender
 from dl.wrapper.Wrapper import VWrapper
 from env.running_env import *
@@ -18,7 +19,6 @@ from utils.objectIO import pickle_mkdir_save, pickle_load
 
 class HRank(ABC):
     ERROR_MESS1 = "Generate mask must after calling get_rank()."
-
     PATH = r"/home/xd/la/projects/HRankFL/res/milestone/vgg_16_bn/2022.07.15_22-21-23.npy"
 
     def __init__(self, wrapper: VWrapper) -> None:
@@ -72,45 +72,64 @@ class HRank(ABC):
     def notify_test(self, loader: tdata.dataloader):
         pass
 
-    def get_rank(self, random: bool = False):
+    def get_rank(self, random: bool = False) -> int:
         if os.path.isfile(self.PATH):
             self.deserialize_rank()
-            return
-        for cov_layer in self.reg_layers:
-            self.drive_hook(cov_layer, random)
-        self.save_rank()
-        global_logger.info("Rank init finished======================>")
+        else:
+            for cov_layer in self.reg_layers:
+                self.drive_hook(cov_layer, random)
 
-    def rank_plus(self, en_alpha: float = 0.5, en_shrink: float = 0.95, info_norm: int = 1, backward: int = 1):
+        path, path_id = file_repo.new_rank('Norm_Rank')
+        self.save_rank(path)
+        global_logger.info("Rank init finished======================>")
+        return path_id
+
+    def rank_plus(self, info_norm: int = 1, backward: int = 1) -> int:
         for params in self.flow_layers_params:
             filters = params.shape[0]
             channels = params.shape[1]
             if info_norm == 1:
                 degree = torch.tensor([torch.linalg.matrix_rank(params[i, j, :, :]).item()
-                                      for i in range(filters) for j in range(channels)])
+                                       for i in range(filters) for j in range(channels)])
             elif info_norm == 2:
-                degree = torch.tensor([torch.sum(params[i, j, :, :]).item()
+                degree = torch.tensor([torch.sum(abs(params[i, j, :, :])).item()
                                        for i in range(filters) for j in range(channels)])
             else:
                 degree = 0
                 global_logger.info('Illegal info_norm manner.')
                 exit(1)
-            self.info_flow_list.append(torch.sum(degree, dim=0))
 
+            degree = degree.reshape(params.size()[0:2])
+
+            self.info_flow_list.append(torch.sum(degree, dim=0).numpy())
+
+            global_logger.info(f"Finish {params.size()} weight......")
+        self.info_flow_list = arrays_normalization(self.info_flow_list,
+                                                   calculate_average_value(self.rank_list))
+        self.rank_aggregation(backward)
+
+        path, path_id = file_repo.new_rank('Rank_Plus')
+        self.save_rank(path)
+        global_logger.info("Rank plus finished======================>")
+        return path_id
+
+    # rank_list:list[ndarray]
+    # info_flow_list:list[ndarray]
+    def rank_aggregation(self, backward: int, en_alpha: float = 0.7, en_shrink: float = 0.5):
+        tail = len(self.rank_list) - 1
         if backward == 1:
-            tail = len(self.rank_list) - 1
             for index in range(tail):
-                self.rank_list[index] += en_alpha*self.info_flow_list[index+1]
+                self.rank_list[index] += en_alpha * self.info_flow_list[index]
                 en_alpha *= en_shrink
         elif backward == 2:
-            for index in range(len(self.rank_list) - 2, -1, -1):
-                self.rank_list[index] += en_alpha * self.info_flow_list[index + 1]
+            for index in range(tail, -1, -1):
+                self.rank_list[index] += en_alpha * self.info_flow_list[index]
         else:
             global_logger.info('Illegal backward manner.')
             exit(1)
 
-    def save_rank(self):
-        pickle_mkdir_save(self.rank_list, file_repo.new_rank()[0])
+    def save_rank(self, path: str):
+        pickle_mkdir_save(self.rank_list, path)
 
     def deserialize_rank(self):
         self.rank_list = pickle_load(self.PATH)
@@ -148,6 +167,7 @@ class HRank(ABC):
         # exp code
         self.wrapper.container.store(args.exp_name)
         # exp code
+
         global_logger.info("Warm up finished======================>")
 
 

@@ -55,49 +55,6 @@ def test_prune_model():
     cell.prune_model()
     cell.test_performance()
 
-# +++features.conv0:
-# +++features.norm0:
-# +++features.relu0:
-# +++features.conv1:
-# +++features.norm1:
-# +++features.relu1:
-# +++features.pool2:
-# +++features.conv3:
-# +++features.norm3:
-# +++features.relu3:
-# +++features.conv4:
-# +++features.norm4:
-# +++features.relu4:
-# +++features.pool5:
-# +++features.conv6:
-# +++features.norm6:
-# +++features.relu6:
-# +++features.conv7:
-# +++features.norm7:
-# +++features.relu7:
-# +++features.conv8:
-# +++features.norm8:
-# +++features.relu8:
-# +++features.pool9:
-# +++features.conv10:
-# +++features.norm10:
-# +++features.relu10:
-# +++features.conv11:
-# +++features.norm11:
-# +++features.relu11:
-# +++features.conv12:
-# +++features.norm12:
-# +++features.relu12:
-# +++features.pool13:
-# +++features.conv14:
-# +++features.norm14:
-# +++features.relu14:
-# +++features.conv15:
-# +++features.norm15:
-# +++features.relu15:
-# +++features.conv16:
-# +++features.norm16:
-# +++features.relu16:
 
 def mask_gen():
     model = create_model(VModel.VGG16)
@@ -108,9 +65,12 @@ def mask_gen():
     for pa in params:
         print(pa.size())
 
+
 def test_valid():
     cell = SingleCell(prune=True)
     cell.test_performance()
 
+
 def main():
-    test_prune_model()
+    test_center_train()
+

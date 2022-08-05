@@ -1,12 +1,13 @@
 # test_rankfl.yaml
 
 # resource config
-
+exp_name: test
 
 # checkpoint config
 model: vgg16
 use_gpu: True
 gpu_ids: [0]
+pre_train: True
 
 # dataset config
 dataset: cifar10
@@ -25,13 +26,22 @@ scheduler: step_lr
 step_size: 1
 gamma: 0.99309
 
+# prune config
+rank_path: none
+info_norm: 2
+backward: 2
+en_alpha: 0.5
+en_shrink: 0.95
+
 # federal config
 non_iid: hetro
 workers: 100
 active_workers: 10
 federal_round: 100
+
 local_epoch: 5
 batch_limit: 99999
 test_batch_limit: 5
 coff: 3
 mu: 0.1
+

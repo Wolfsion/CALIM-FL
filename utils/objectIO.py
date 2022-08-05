@@ -15,8 +15,14 @@ def touch_file(f):
     fid.close()
 
 
+def fetch_path_id(f: str) -> str:
+    path_base, file = os.path.split(f)
+    _file_name, file_postfix = os.path.splitext(file)
+    return _file_name
+
+
 # load obj not only wrapper: nn.Moudle
-def pickle_mkdir_save(obj, f):
+def pickle_mkdir_save(obj, f: str):
     create_path(f)
     # disabling warnings from torch.Tensor's reduce function. See issue: https://github.com/pytorch/pytorch/issues/38597
     with warnings.catch_warnings():

@@ -33,9 +33,7 @@ class DataLoader(torch.utils.data.DataLoader):
 
 
 def get_data(dataset: VDataSet, data_type, transform=None, target_transform=None):
-    if dataset == VDataSet.CIFAR100:
-        pass
-    elif dataset == VDataSet.CIFAR10:
+    if dataset == VDataSet.CIFAR10:
         assert data_type in ["train", "test"]
         if transform is None:
             if data_type == "train":
@@ -75,12 +73,9 @@ def get_data(dataset: VDataSet, data_type, transform=None, target_transform=None
                                              train=data_type == "train", download=True,
                                              transform=transform,
                                              target_transform=target_transform)
-
     elif dataset == VDataSet.ImageNet:
         assert data_type in ["train", "test"]
-        imagenet_data = torchvision.datasets.ImageNet(root=join(file_repo.dataset_path, "ImageNet"), download=True)
-
-
+        imagenet_data = torchvision.datasets.ImageNet(root=join(file_repo.dataset_path, "ImageNet"))
     else:
         raise ValueError("{} dataset is not supported.".format(dataset))
 
@@ -95,7 +90,6 @@ def get_data_loader(name: VDataSet, data_type: str, batch_size=None, shuffle: bo
         assert sampler is None, "Cannot shuffle when using sampler"
 
     data = get_data(name, data_type=data_type, transform=transform, target_transform=target_transform)
-
     if subset_indices is not None:
         data = torch.utils.data.Subset(data, subset_indices)
     if data_type != "train" and batch_size is None:

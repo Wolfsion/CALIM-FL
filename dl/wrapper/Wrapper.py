@@ -10,6 +10,7 @@ from torch.optim import lr_scheduler
 from torch.nn.functional import binary_cross_entropy_with_logits
 from timeit import default_timer as timer
 
+from dl.wrapper.optimizer.WarmUpCosinLR import WarmUPCosineLR
 from env.static_env import *
 from env.running_env import *
 from dl.wrapper import DeviceManager
@@ -17,6 +18,7 @@ from env.support_config import *
 from dl.model import model_util
 from dl.wrapper.optimizer import SGD_PruneFL
 from utils.VContainer import VContainer
+from utils.objectIO import pickle_mkdir_save, pickle_load
 
 
 def error_mess(class_name: str, param: str) -> str:
@@ -46,8 +48,9 @@ class VWrapper:
         self.model = model
         self.loader = dataloader
 
-        self.last_acc = 0.0
+        self.latest_acc = 0.0
         self.curt_batch = 0
+        self.curt_epoch = 0
         self.container = VContainer()
 
     def default_config(self):
@@ -57,22 +60,27 @@ class VWrapper:
         self.device = DeviceManager.VDevice(use_gpu, gpu_ids)
         self.model = self.device.bind_model(self.model)
 
-    def init_optim(self, learning_rate: float, momentum: float, weight_decay: float):
+    def init_optim(self, learning_rate: float, momentum: float,
+                   weight_decay: float, nesterov: bool):
         if self.optimizer_type == VOptimizer.SGD:
-
             self.optimizer = optim.SGD(self.model.parameters(), lr=learning_rate,
-                                       momentum=momentum, weight_decay=weight_decay)
-
+                                       momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)
         elif self.optimizer_type == VOptimizer.SGD_PFL:
-
-            self.optimizer = SGD_PruneFL.SGD_PFL(self.model.parameters(), lr=INIT_LR)
-
+            self.optimizer = SGD_PruneFL.SGD_PFL(self.model.parameters(), lr=learning_rate)
+        elif self.optimizer_type == VOptimizer.ADAM:
+            self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate,
+                                        weight_decay=weight_decay)
         else:
             assert False, self.ERROR_MESS2
 
-    def init_scheduler_loss(self, step_size: int, gamma: float):
+    def init_scheduler_loss(self, step_size: int, gamma: float, T_max: int = 50, warm_up_steps: int = 10,
+                            lr_min: float = 1e-9):
         if self.scheduler_type == VScheduler.StepLR:
             self.lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=step_size, gamma=gamma)
+        elif self.scheduler_type == VScheduler.CosineAnnealingLR:
+            self.lr_scheduler = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=T_max)
+        elif self.scheduler_type == VScheduler.WarmUPCosineLR:
+            self.lr_scheduler = WarmUPCosineLR(self.optimizer, warm_up_steps, T_max, lr_min=lr_min)
         else:
             assert False, self.ERROR_MESS3
 
@@ -141,24 +149,24 @@ class VWrapper:
             test_loss += loss.item()
             total += targets.size(0)
 
-            global_logger.info('%s:batch_idx:%d | Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                               % (process, batch_idx, test_loss / (batch_idx + 1),
-                                  100. * correct / total, correct, total))
+            self.latest_acc = 100. * correct / total
 
-            # exp code
-            self.container.flash(args.exp_name, 100. * correct / total)
-            # exp code
+            if batch_idx % print_interval == 0:
+                global_logger.info('%s:batch_idx:%d | Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                                   % (process, batch_idx, test_loss / (batch_idx + 1),
+                                      self.latest_acc, correct, total))
 
+            self.container.flash(args.exp_name, self.latest_acc)
             self.curt_batch += 1
 
+        self.lr_scheduler.step()
+        self.curt_epoch += 1
         return correct, test_loss, total
 
     def optim_step(self, loss: torch.Tensor):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        if self.lr_scheduler is not None:
-            self.lr_scheduler.step()
 
     def get_last_lr(self):
         if self.lr_scheduler is None:
@@ -180,22 +188,16 @@ class VWrapper:
     def sync_tensor(self, tensor: torch.Tensor) -> torch.Tensor:
         return next(self.device.on_tensor(tensor))
 
-    # # to finish
-    # def save_checkpoint(self, file_path: str):
-    #     # exp_const_config = {"exp_name": CIFAR10_NAME, "batch_size": CLIENT_BATCH_SIZE,
-    #     #                     "num_local_updates": NUM_LOCAL_UPDATES, "init_lr": INIT_LR,
-    #     #                     "lrhl": LR_HALF_LIFE}
-    #     exp_const_config = {"exp_name": CIFAR10_NAME, "state_dict": self.device.freeze_model()}
-    #     # args_config = vars(self.args)
-    #     # configs = exp_const_config.copy()
-    #     # configs.update(args_config)
-    #     model_util.mkdir_save(exp_const_config, file_path)
-    #
-    # # !
-    # def load_checkpoint(self, path: str, model_key: str = 'state_dict'):
-    #     checkpoint = torch.load(path, map_location=torch.device('cpu'))
-    #     assert model_key in checkpoint.keys(), self.ERROR_MESS1
-    #     self.device.load_model(checkpoint[model_key])
+    def save_checkpoint(self, file_path: str):
+        exp_checkpoint = {"exp_name": CIFAR10_NAME, "state_dict": self.device.freeze_model(),
+                          "batch_size": args.batch_size, "last_epoch": self.curt_epoch,
+                          "init_lr": args.learning_rate}
+        pickle_mkdir_save(exp_checkpoint, file_path)
+
+    def load_checkpoint(self, path: str, model_key: str = 'state_dict'):
+        checkpoint = pickle_load(path)
+        assert model_key in checkpoint.keys(), self.ERROR_MESS5
+        self.device.load_model(checkpoint[model_key])
 
     def valid_performance(self, loader: tdata.dataloader):
         inputs = torch.rand(*self.running_scale())

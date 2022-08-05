@@ -5,7 +5,7 @@
 ```shell
 pip install torch torchvision torchaudio
 
-pip install thop onnx fedlab PyHessian scikit-learn seaborn
+pip install thop onnx fedlab PyHessian scikit-learn seaborn ruamel.yaml
 ```
 
 ## 使用说明
@@ -27,6 +27,12 @@ pip install thop onnx fedlab PyHessian scikit-learn seaborn
 ## 怎样高效地进行扩展，针对其他模型和其他类型的数据集
 
 如果想要更深层地优化代码，可以访问https://wolfsion.github.io参考整体工程架构介绍，以便快速熟悉
+
+## 怎样高效地进行扩展，针对其他优化器和学习率调度器
+1. env.support_config下提前声明要添加的优化器和调度器枚举成员
+2. yaml_args中optim_str2enum()和scheduler_str2enum()添加yaml配置值到枚举成员的映射
+3. dl.wrapper.Wrapper下init_optim()编写优化器的创建语句、init_scheduler_loss()下编写调度器的创建语句
+4. 如果是自定义的优化器或调度器编写相关类，然后提供初始化接口
 
 
 

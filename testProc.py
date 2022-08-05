@@ -1,5 +1,6 @@
 from enum import Enum, unique
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -9,7 +10,9 @@ from env import yaml2args
 from env.running_env import args
 import os
 
+from env.support_config import VModel
 from utils.PathManager import FileType
+from utils.Visualizer import HRankBoard
 from utils.objectIO import touch_file
 
 
@@ -41,9 +44,15 @@ def dataset():
     print("here")
 
 
-
-
 if __name__ == "__main__":
-    from utils.test_unit import main
-    main()
+    DEFAULT_ARGS = {"optim": "sgd",
+                    "learning_rate": 0.1,
+                    "momentum": 0.9,
+                    "weight_decay": 1e-5,
+                    "step_size": 1,
+                    "gamma": 0.5 ** (1 / 100),
+                    "use_gpu": True,
+                    "gpu_ids": [0]}
+    print(DEFAULT_ARGS["learning_rate"])
+    print(DEFAULT_ARGS["weight_decay"]*10)
     print("----------------------")
