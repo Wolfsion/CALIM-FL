@@ -8,6 +8,7 @@ from utils.VContainer import VContainer
 from env.running_env import *
 species = ['VGG', 'ResNet']
 
+
 def random_list(length=100):
     random_int_list = []
     for i in range(length):

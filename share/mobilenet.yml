@@ -1,22 +1,21 @@
 # resource config
-exp_name: cifar100-resnet110
+exp_name: cifar100-mobilenetV2
 
 # checkpoint config
-model: resnet110
+model: mobilenetV2
 
 # dataset config
 dataset: cifar100
 batch_size: 128
 
 # optimizer config
-# optim: sgd
 optim: sgd
-learning_rate: 0.1
+learning_rate: 0.01
 
 # scheduler config
-scheduler: warmup_step_lr
+scheduler: warmup_cos_lr
 min_lr: 0.0
-warm_steps: 10
+warm_steps: 5
 
 # federal config
 non_iid: hetro
@@ -28,6 +27,5 @@ federal_round: 100
 # local_epoch: 5
 
 ## center train
-local_epoch: 500
+local_epoch: 300
 test_batch_limit: 5
-

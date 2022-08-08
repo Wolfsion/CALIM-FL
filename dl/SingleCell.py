@@ -3,8 +3,10 @@ from typing import Iterator
 import torch.nn as nn
 import torch.utils.data as tdata
 
+from dl.compress.HyperProvider import IntervalProvider
 from dl.compress.VHRank import HRank
-from dl.model.model_util import create_model, pre_train_model
+from dl.model.model_util import create_model
+from dl.wrapper.ExitDriver import ExitManager
 from dl.wrapper.Wrapper import VWrapper
 from env.running_env import args, file_repo
 from dl.data.dataProvider import get_data_loader
@@ -33,7 +35,9 @@ class SingleCell:
         self.init_model_dataloader()
         self.init_wrapper()
         if prune:
-            self.init_prune()
+            self.prune_ext = HRank(self.wrapper)
+            self.hyper = IntervalProvider()
+        self.exit_manager = ExitManager(self.wrapper)
 
     # init
     def init_model_dataloader(self):
@@ -49,12 +53,9 @@ class SingleCell:
                                 args.optim, args.scheduler, args.loss_func)
         self.wrapper.init_device(args.use_gpu, args.gpu_ids)
         self.wrapper.init_optim(args.learning_rate, args.momentum, args.weight_decay, args.nesterov)
-        self.wrapper.init_scheduler_loss(args.step_size, args.gamma, args.local_epoch, args.warm_steps)
+        self.wrapper.init_scheduler_loss(args.step_size, args.gamma, args.local_epoch, args.warm_steps, args.min_lr)
         if args.pre_train:
             self.wrapper.load_checkpoint(file_repo.model_path)
-
-    def init_prune(self):
-        self.prune_ext = HRank(self.wrapper)
 
     # checkpoint
     def sync_model(self):
@@ -73,15 +74,15 @@ class SingleCell:
     def run_model(self, train: bool = False,
                   pre_params: Iterator = None,
                   batch_limit: int = 0) -> int:
+        loss = 0.0
         self.latest_feed_amount = 0
         self.train_epoch += args.local_epoch
         for i in range(args.local_epoch):
             global_logger.info(f"Train epoch:{i+1}======>")
-
             if batch_limit == 0:
-                _, loss, total = self.wrapper.step_run(args.batch_limit, train, pre_params)
+                _, total, loss = self.wrapper.step_run(args.batch_limit, train, pre_params)
             else:
-                _, loss, total = self.wrapper.step_run(batch_limit, train, pre_params)
+                _, total, loss = self.wrapper.step_run(batch_limit, train, pre_params)
             self.latest_feed_amount += total
             self.wrapper.show_lr()
         return loss
@@ -95,11 +96,31 @@ class SingleCell:
     def show_lr(self):
         self.wrapper.show_lr()
 
-    def prune_model(self):
+    def prune_model(self, plus: bool = True):
         path_id = self.prune_ext.get_rank()
         args.rank_norm_path = file_repo.fetch_path(path_id)
-        path_id = self.prune_ext.rank_plus(info_norm=args.info_norm, backward=args.backward)
-        args.rank_plus_path = file_repo.fetch_path(path_id)
+        if plus:
+            path_id = self.prune_ext.rank_plus(info_norm=args.info_norm, backward=args.backward)
+            args.rank_plus_path = file_repo.fetch_path(path_id)
 
-        self.prune_ext.mask_prune(vgg16_candidate_rate)
+        self.prune_ext.mask_prune(args.prune_rate)
         self.prune_ext.warm_up(wu_epoch, wu_batch)
+
+    def run_prune_model(self, lag: int = 10):
+        for i in range(1, args.local_epoch+1):
+            global_logger.info(f"Train epoch:{i + 1}======>")
+            self.wrapper.step_run(args.batch_limit, train=True)
+
+            if i % lag == 0:
+                self.prune_ext.get_rank(store=False)
+                self.hyper.push_simp_container(self.prune_ext.rank_list)
+                if self.hyper.is_timing_simple():
+                    self.prune_ext.mask_prune(args.prune_rate)
+                    self.prune_ext.warm_up(args.local_epoch - i, wu_batch)
+
+    def exit_proc(self, check: bool = False):
+        if check:
+            self.exit_manager.checkpoint_freeze()
+        self.exit_manager.config_freeze()
+        self.exit_manager.running_freeze()
+

@@ -67,7 +67,8 @@ class HRankBoard:
         df = pd.DataFrame(pd_ori_data, columns=['Acc', 'Epoch', 'Class'])
         sns.set(style='darkgrid', color_codes=True)
         sns.lineplot(data=df, x="Epoch", y="Acc", hue="Class")
-        plt.savefig(file_repo.new_img("acc_imp")[0])
+        plt.savefig(file_repo.new_img("Acc compare")[0])
+        plt.clf()
 
 
 class VisBoard:

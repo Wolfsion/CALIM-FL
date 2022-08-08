@@ -39,7 +39,9 @@ class VScheduler(Enum):
     StepLR = 1
     CosineAnnealingLR = 2
     WarmUPCosineLR = 3
-    UPPER = 4
+    ReduceLROnPlateau = 4
+    WarmUPStepLR = 5
+    UPPER = 6
 
 
 # loss func

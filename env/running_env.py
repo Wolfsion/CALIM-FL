@@ -18,9 +18,8 @@ image_base = r'res/images'
 exp_base = r'res/exp'
 log_base = r'logs'
 
-if args.model == VModel.VGG11:
-    model_path = vgg11_model
-elif args.model == VModel.VGG16:
+
+if args.model == VModel.VGG16:
     model_path = vgg16_model
 elif args.model == VModel.ResNet56:
     model_path = resnet56_model
@@ -29,7 +28,7 @@ elif args.model == VModel.ResNet110:
 elif args.model == VModel.MobileNetV2:
     model_path = mobilenetv2_model
 else:
-    model_path = vgg11_model
+    model_path = vgg16_model
     print('Not supported model type.')
     exit(1)
 

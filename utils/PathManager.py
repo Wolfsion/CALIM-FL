@@ -22,6 +22,7 @@ class FileType(Enum):
     IMG_TYPE = '.png'
     LOG_TYPE = '.log'
     EXP_TYPE = '.txt'
+    INTER_TYPE = '.inter'
     RANK_TYPE = '.npy'
     CHECKPOINT_TYPE = '.snap'
 
@@ -60,7 +61,7 @@ class PathManager(ABC):
         self.checkpoint_path = None
 
         self.curt_id = 0
-        self.container = []
+        self.reg_path = []
 
     @staticmethod
     def load(path: str) -> Any:
@@ -81,14 +82,17 @@ class PathManager(ABC):
         self.checkpoint_path = path_base
 
     def fetch_path(self, path_id: int) -> str:
-        return self.container[path_id]
+        return self.reg_path[path_id]
 
     def sync_path(self, path: str) -> int:
         create_path(path)
-        self.container.append(path)
+        self.reg_path.append(path)
         ret = self.curt_id
         self.curt_id += 1
         return ret
+
+    def latest_path(self) -> str:
+        return self.fetch_path(self.curt_id-1)
 
     def new_log(self, name: str = None) -> (str, int):
         new_file = os.path.join(self.log_path, file_name(FileType.LOG_TYPE, name))
@@ -124,7 +128,7 @@ class HRankPathManager(PathManager):
         file_id = self.sync_path(new_file)
         return new_file, file_id
 
-    def new_acc(self, name: str = None) -> (str, int):
-        new_file = os.path.join(self.mile_path, file_name(FileType.EXP_TYPE, name))
+    def new_inter(self, name: str = None) -> (str, int):
+        new_file = os.path.join(self.mile_path, file_name(FileType.INTER_TYPE, name))
         file_id = self.sync_path(new_file)
         return new_file, file_id

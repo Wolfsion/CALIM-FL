@@ -13,9 +13,10 @@ from federal.aggregation.FedAvg import FedAvg
 
 
 class FLMaster(ABC):
-    def __init__(self, workers_num: int, schedule_num: int, master_cell: SingleCell):
+    def __init__(self, workers_num: int, schedule_num: int, local_epoch: int, master_cell: SingleCell):
         self.workers = workers_num
         self.plan = schedule_num
+        self.pace = local_epoch
         self.cell = master_cell
         self.merge = FedAvg(master_cell.access_model().state_dict())
 
@@ -24,7 +25,7 @@ class FLMaster(ABC):
         return indices
 
     @abstractmethod
-    def step_run(self):
+    def union_run(self, rounds: int):
         pass
 
     @abstractmethod

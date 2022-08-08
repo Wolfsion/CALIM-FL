@@ -45,14 +45,6 @@ def dataset():
 
 
 if __name__ == "__main__":
-    DEFAULT_ARGS = {"optim": "sgd",
-                    "learning_rate": 0.1,
-                    "momentum": 0.9,
-                    "weight_decay": 1e-5,
-                    "step_size": 1,
-                    "gamma": 0.5 ** (1 / 100),
-                    "use_gpu": True,
-                    "gpu_ids": [0]}
-    print(DEFAULT_ARGS["learning_rate"])
-    print(DEFAULT_ARGS["weight_decay"]*10)
+    b = range(1, 10)
+    print(list(b))
     print("----------------------")

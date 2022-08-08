@@ -10,7 +10,10 @@ from torch.optim import lr_scheduler
 from torch.nn.functional import binary_cross_entropy_with_logits
 from timeit import default_timer as timer
 
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 from dl.wrapper.optimizer.WarmUpCosinLR import WarmUPCosineLR
+from dl.wrapper.optimizer.WarmUpStepLR import WarmUPStepLR
 from env.static_env import *
 from env.running_env import *
 from dl.wrapper import DeviceManager
@@ -49,6 +52,7 @@ class VWrapper:
         self.loader = dataloader
 
         self.latest_acc = 0.0
+        self.latest_loss = 0.0
         self.curt_batch = 0
         self.curt_epoch = 0
         self.container = VContainer()
@@ -73,14 +77,17 @@ class VWrapper:
         else:
             assert False, self.ERROR_MESS2
 
-    def init_scheduler_loss(self, step_size: int, gamma: float, T_max: int = 50, warm_up_steps: int = 10,
-                            lr_min: float = 1e-9):
+    def init_scheduler_loss(self, step_size: int, gamma: float, T_max: int, warm_up_steps: int, min_lr: float):
         if self.scheduler_type == VScheduler.StepLR:
             self.lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=step_size, gamma=gamma)
         elif self.scheduler_type == VScheduler.CosineAnnealingLR:
             self.lr_scheduler = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=T_max)
         elif self.scheduler_type == VScheduler.WarmUPCosineLR:
-            self.lr_scheduler = WarmUPCosineLR(self.optimizer, warm_up_steps, T_max, lr_min=lr_min)
+            self.lr_scheduler = WarmUPCosineLR(self.optimizer, warm_up_steps, T_max, lr_min=min_lr)
+        elif self.scheduler_type == VScheduler.ReduceLROnPlateau:
+            self.lr_scheduler = ReduceLROnPlateau(self.optimizer, 'min')
+        elif self.scheduler_type == VScheduler.WarmUPStepLR:
+            self.lr_scheduler = WarmUPStepLR(self.optimizer, step_size=step_size, gamma=gamma)
         else:
             assert False, self.ERROR_MESS3
 
@@ -117,7 +124,7 @@ class VWrapper:
         else:
             self.model.eval()
 
-        test_loss = 0
+        train_loss = 0
         correct = 0
         total = 0
         process = "Train" if train else "Test"
@@ -146,27 +153,33 @@ class VWrapper:
             _, predicted = pred.max(1)
             _, targets = labels.max(1)
             correct += predicted.eq(targets).sum().item()
-            test_loss += loss.item()
+            train_loss += loss.item()
             total += targets.size(0)
 
             self.latest_acc = 100. * correct / total
+            self.latest_loss = train_loss / (batch_idx + 1)
 
             if batch_idx % print_interval == 0:
-                global_logger.info('%s:batch_idx:%d | Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                                   % (process, batch_idx, test_loss / (batch_idx + 1),
-                                      self.latest_acc, correct, total))
-
-            self.container.flash(args.exp_name, self.latest_acc)
+                global_logger.info('%s:batch_idx:%d | Loss: %.6f | Acc: %.3f%% (%d/%d)'
+                                   % (process, batch_idx, self.latest_loss, self.latest_acc, correct, total))
             self.curt_batch += 1
 
-        self.lr_scheduler.step()
         self.curt_epoch += 1
-        return correct, test_loss, total
+        self.container.flash('acc', self.latest_acc)
+        self.scheduler_step()
+
+        return correct, total, self.latest_loss
 
     def optim_step(self, loss: torch.Tensor):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def scheduler_step(self):
+        if self.scheduler_type == VScheduler.ReduceLROnPlateau:
+            self.lr_scheduler.step(metrics=self.latest_loss)
+        else:
+            self.lr_scheduler.step()
 
     def get_last_lr(self):
         if self.lr_scheduler is None:
@@ -204,13 +217,13 @@ class VWrapper:
         cpu_model = deepcopy(self.device.access_model()).cpu()
         flops, params = profile(cpu_model, inputs=(inputs,))
         time_start = timer()
-        correct, test_loss, total = self.step_run(valid_limit, loader=loader)
+        correct, total, test_loss = self.step_run(valid_limit, loader=loader)
         time_cost = timer() - time_start
         total_params = sum(p.numel() for p in self.model.parameters())
         total_trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
 
         global_logger.info('Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                           % (test_loss / valid_limit, 100. * correct / total, correct, total))
+                           % (test_loss, 100. * correct / total, correct, total))
 
         global_logger.info('Time cost: %.3f | FLOPs: %d | Params: %d'
                            % (time_cost, flops, params))

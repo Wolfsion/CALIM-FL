@@ -1,19 +1,17 @@
 import os.path
-from abc import ABC, abstractmethod
-from collections import OrderedDict
+from abc import ABC
 from typing import List
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as tdata
 
+from dl.compress.HyperProvider import IntervalProvider
 from dl.compress.compress_util import arrays_normalization, calculate_average_value
 from dl.model.ModelExt import Extender
 from dl.wrapper.Wrapper import VWrapper
 from env.running_env import *
-from dl.model import model_util
 from env.static_env import rank_limit
-from env.support_config import VModel
 from utils.objectIO import pickle_mkdir_save, pickle_load
 
 
@@ -72,15 +70,17 @@ class HRank(ABC):
     def notify_test(self, loader: tdata.dataloader):
         pass
 
-    def get_rank(self, random: bool = False) -> int:
+    def get_rank(self, random: bool = False, store: bool = True) -> int:
         if os.path.isfile(self.PATH):
             self.deserialize_rank()
         else:
             for cov_layer in self.reg_layers:
                 self.drive_hook(cov_layer, random)
 
-        path, path_id = file_repo.new_rank('Norm_Rank')
-        self.save_rank(path)
+        path_id = -1
+        if store:
+            path, path_id = file_repo.new_rank('Norm_Rank')
+            self.save_rank(path)
         global_logger.info("Rank init finished======================>")
         return path_id
 
@@ -92,7 +92,7 @@ class HRank(ABC):
                 degree = torch.tensor([torch.linalg.matrix_rank(params[i, j, :, :]).item()
                                        for i in range(filters) for j in range(channels)])
             elif info_norm == 2:
-                degree = torch.tensor([torch.sum(abs(params[i, j, :, :])).item()
+                degree = torch.tensor([torch.sum(torch.abs(params[i, j, :, :])).item()
                                        for i in range(filters) for j in range(channels)])
             else:
                 degree = 0

@@ -1,10 +1,8 @@
-from collections import OrderedDict
 from typing import Iterator
 
-import torch.nn as nn
 from dl.SingleCell import SingleCell
 from env.running_env import global_logger
-from federal.FLnodes import FLWorker
+from federal.simulation.FLnodes import FLWorker
 
 
 # CIFAR VGG

@@ -16,7 +16,18 @@ pip install thop onnx fedlab PyHessian scikit-learn seaborn ruamel.yaml
 2. 修改custom_path.py文件下对应路径参数，考虑到模型参数和数据集占用存储较大，
 这两块内容应由使用者预先准备好，并指定出对应位置。
 
++ 支持配置的参数类型及参数值
+| Config item | Options                                                      |
+|:-----------:|:-------------------------------------------------------------|
+|    model    | vgg16, resnet56, resnet110, mobilenetV2                      |
+|   dataset   | cifar10, cifar100                                            |
+|    optim    | sgd, sgd_pfl, adam                                           |
+|  scheduler  | step_lr, cosine_lr, reduce_lr, warmup_cos_lr, warmup_step_lr |
+|    loss     | cross_entropy                                                |
+|   non-iid   | hetro, shards                                                |
+
    
+
 ## 开发上的规范
 
 1. test_unit.py可提供单元测试或是对外接口

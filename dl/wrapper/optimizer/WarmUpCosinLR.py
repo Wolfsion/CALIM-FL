@@ -4,7 +4,7 @@ from torch.optim import Optimizer
 
 
 class WarmUPCosineLR(optim.lr_scheduler.LambdaLR):
-    def __init__(self, optimizer: Optimizer, warm_up_steps: int = 10, T_max: int = 50, lr_min: float = 1e-5):
+    def __init__(self, optimizer: Optimizer, warm_up_steps: int = 5, T_max: int = 50, lr_min: float = 1e-5):
         self.optimizer = optimizer
         self.warm_up_steps = warm_up_steps
         self.T_max = T_max

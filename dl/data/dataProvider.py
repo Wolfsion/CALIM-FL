@@ -32,49 +32,47 @@ class DataLoader(torch.utils.data.DataLoader):
         return len(self.dataset)
 
 
+def init_transform(data_type: str, mean: list, std: list):
+    if data_type == "train":
+        return transforms.Compose([transforms.RandomCrop(32, padding=4),
+                                   transforms.RandomHorizontalFlip(),
+                                   # transforms.RandomRotation(15),
+                                   transforms.ToTensor(),
+                                   transforms.Normalize(mean, std)])
+    else:
+        return transforms.Compose([transforms.ToTensor(),
+                                   transforms.Normalize(mean, std)])
+
+
+def init_target_transform(num_classes: int):
+    return transforms.Compose([DataToTensor(dtype=torch.long),
+                               OneHot(num_classes, to_float=True)])
+
+
 def get_data(dataset: VDataSet, data_type, transform=None, target_transform=None):
     if dataset == VDataSet.CIFAR10:
         assert data_type in ["train", "test"]
         if transform is None:
-            if data_type == "train":
-                transform = transforms.Compose([transforms.RandomHorizontalFlip(),
-                                                transforms.RandomCrop(32, 4),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)])
-            else:
-                transform = transforms.Compose([transforms.ToTensor(),
-                                                transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)])
+            transform = init_transform(data_type, CIFAR10_MEAN, CIFAR10_STD)
         if target_transform is None:
-            target_transform = transforms.Compose([DataToTensor(dtype=torch.long),
-                                                   OneHot(CIFAR10_CLASSES, to_float=True)])
-
+            target_transform = init_target_transform(CIFAR10_CLASSES)
         return torchvision.datasets.CIFAR10(root=join(file_repo.dataset_path, "CIFAR10"),
                                             train=data_type == "train", download=True,
                                             transform=transform,
                                             target_transform=target_transform)
-
     elif dataset == VDataSet.CIFAR100:
         assert data_type in ["train", "test"]
         if transform is None:
-            mean = CIFAR100_MEAN
-            std = CIFAR100_STD
-            if data_type == "train":
-                transform = transforms.Compose([transforms.RandomHorizontalFlip(),
-                                                transforms.RandomCrop(32, 4),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize(mean, std)])
-            else:
-                transform = transforms.Compose([transforms.ToTensor(),
-                                                transforms.Normalize(mean, std)])
+            transform = init_transform(data_type, CIFAR100_MEAN, CIFAR100_STD)
         if target_transform is None:
-            target_transform = transforms.Compose([DataToTensor(dtype=torch.long),
-                                                   OneHot(CIFAR100_CLASSES, to_float=True)])
+            target_transform = init_target_transform(CIFAR100_CLASSES)
         return torchvision.datasets.CIFAR100(root=join(file_repo.dataset_path, "CIFAR100"),
                                              train=data_type == "train", download=True,
                                              transform=transform,
                                              target_transform=target_transform)
+
     elif dataset == VDataSet.ImageNet:
-        assert data_type in ["train", "test"]
+        assert data_type in ["train", "test", "val"]
         imagenet_data = torchvision.datasets.ImageNet(root=join(file_repo.dataset_path, "ImageNet"))
     else:
         raise ValueError("{} dataset is not supported.".format(dataset))

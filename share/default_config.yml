@@ -33,6 +33,9 @@ backward: 2
 en_alpha: 0.5
 en_shrink: 0.95
 
+interval: True
+rank_plus: True
+
 # federal config
 non_iid: hetro
 workers: 100

@@ -1,10 +1,9 @@
-# test_rankfl.yaml
-
 # resource config
 exp_name: cifar10-vgg16
 
 # checkpoint config
 model: vgg16
+pre_train: True
 
 # dataset config
 dataset: cifar10
@@ -12,12 +11,13 @@ batch_size: 32
 
 # optimizer config
 # optim: sgd
-optim: sgd_pfl
-learning_rate: 0.01
+optim: sgd
+learning_rate: 0.1
 
 # scheduler config
-scheduler: step_lr
-warm_steps: 10
+scheduler: warmup_cos_lr
+warm_steps: 5
+min_lr: 0.0
 
 # federal config
 non_iid: hetro
@@ -25,6 +25,6 @@ workers: 100
 active_workers: 10
 federal_round: 100
 
-local_epoch: 5
+local_epoch: 50
 test_batch_limit: 5
 

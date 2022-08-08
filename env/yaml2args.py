@@ -1,6 +1,8 @@
 from ruamel.yaml import YAML
 from copy import deepcopy
 
+from env.static_env import vgg16_candidate_rate, resnet56_candidate_rate, \
+    resnet110_candidate_rate, mobile_candidate_rate
 from env.args_request import DEFAULT_ARGS
 from env.support_config import *
 
@@ -48,6 +50,10 @@ def scheduler_str2enum(value: str) -> VScheduler:
         ret = VScheduler.CosineAnnealingLR
     elif value == 'warmup_cos_lr':
         ret = VScheduler.WarmUPCosineLR
+    elif value == 'reduce_lr':
+        ret = VScheduler.ReduceLROnPlateau
+    elif value == 'warmup_step_lr':
+        ret = VScheduler.WarmUPStepLR
     else:
         ret = VScheduler.UPPER
     return ret
@@ -81,6 +87,7 @@ class ArgRepo:
         self.optim = None
         self.nesterov = None
         self.learning_rate = None
+        self.min_lr = None
         self.momentum = None
         self.weight_decay = None
         self.loss_func = None
@@ -94,16 +101,20 @@ class ArgRepo:
         self.federal_round = None
         self.local_epoch = None
         self.batch_limit = None
-        self.coff = None
+        self.loss_back = None
         self.test_batch_limit = None
 
         self.info_norm = None
         self.backward = None
 
     def runtime_attr_placeholder(self):
+        self.curt_base = None
         self.rank_norm_path = None
         self.rank_plus_path = None
         self.num_classes = None
+        self.running_base_path = None
+        self.running_plus_path = None
+        self.prune_rate = None
 
     def activate(self, strict: bool = False):
         options = self.parse_args()
@@ -135,10 +146,36 @@ class ArgRepo:
             else:
                 setattr(self, k, v)
 
+        self.supplement_args()
+
+    def supplement_args(self):
         if self.dataset == VDataSet.CIFAR10:
-            setattr(self, 'num_classes', 10)
+            self.num_classes = 10
         elif self.dataset == VDataSet.CIFAR100:
-            setattr(self, 'num_classes', 100)
+            self.num_classes = 100
         else:
             print("The dataset is not supported.")
             exit(1)
+
+        if self.model == VModel.VGG16:
+            self.prune_rate = vgg16_candidate_rate
+        elif self.model == VModel.ResNet56:
+            self.prune_rate = resnet56_candidate_rate
+        elif self.model == VModel.ResNet110:
+            self.prune_rate = resnet110_candidate_rate
+        elif self.model == VModel.MobileNetV2:
+            self.prune_rate = mobile_candidate_rate
+        else:
+            print("The model is not supported.")
+            exit(1)
+
+    # call after mount_args()
+    def get_snapshot(self) -> str:
+        optim = str(self.optim).split('.')[1]
+        scheduler = str(self.optim).split('.')[1]
+
+        return f"optim:{optim}\n" \
+               f"learning rate:{self.learning_rate}\n" \
+               f"scheduler:{scheduler}\n" \
+               f"warm steps:{self.warm_steps}\n" \
+               f"epoch:{self.local_epoch}"

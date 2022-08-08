@@ -26,6 +26,7 @@ class IntervalProvider:
         num_conv_layers = len(clients_ranks_list[0].keys())
         combine_num = comb(num_clients, 2)
         clients_ranks = [[] for _ in range(num_conv_layers)]
+
         for i in range(num_clients):
             for j in range(num_conv_layers):
                 clients_ranks[j].append(clients_ranks_list[i][j])
@@ -50,6 +51,8 @@ class IntervalProvider:
             ranks_list = self.cont_list
         if len(ranks_list) == self.SIMP_LEN:
             return self.is_timing(ranks_list, self.SIMP_LEN)
+        elif len(ranks_list) < self.SIMP_LEN:
+            return False
         else:
             global_logger.info(f"Length of cont_list is not 2.")
             return self.NULL_NUM

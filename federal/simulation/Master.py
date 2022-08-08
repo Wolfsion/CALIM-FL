@@ -1,24 +1,21 @@
 # CIFAR VGG
 
-import torch
-from collections import OrderedDict
 import torch.utils.data as tdata
-from copy import deepcopy
 
-from dl.model.model_util import load_params, load_model_params
-from env.running_env import args
 from dl.SingleCell import SingleCell
-from federal.FLnodes import FLMaster
-from federal.simulation.vgg.C10V16_Worker import CVWorker
+from federal.simulation.FLnodes import FLMaster
+from federal.simulation.Worker import CVWorker
 
 
 class CVMaster(FLMaster):
-    def __init__(self, loader: tdata.dataloader, workers_loaders: dict):
+    def __init__(self, workers: int, activists: int, local_epoch: int,
+                 loader: tdata.dataloader, workers_loaders: dict):
         master_cell = SingleCell(loader)
-        super().__init__(args.workers, args.active_workers, master_cell)
+        super().__init__(workers, activists, local_epoch, master_cell)
         if workers_loaders is not None:
             workers_cells = [SingleCell(loader) for loader in list(workers_loaders.values())]
             self.workers_nodes = [CVWorker(index, cell) for index, cell in enumerate(workers_cells)]
+
         self.curt_selected = []
 
         self.pre_dict = self.cell.access_model().state_dict()
@@ -27,8 +24,8 @@ class CVMaster(FLMaster):
         self.curt_loss = 0
         self.curt_epoch = 0
 
-    def step_run(self):
-        for i in range(args.federal_round):
+    def union_run(self, rounds: int):
+        for i in range(rounds):
             self.schedule_strategy()
             self.info_sync()
             self.drive_workers()
@@ -46,7 +43,7 @@ class CVMaster(FLMaster):
             workers_dict.append(self.workers_nodes[index].cell.access_model().state_dict())
         self.merge.merge_dict(workers_dict)
         for index in self.curt_selected:
-            self.workers_nodes[index].cell.decay_lr(args.local_epoch)
+            self.workers_nodes[index].cell.decay_lr(self.pace)
 
     # def info_aggregation(self):
     #     # 计算总权重

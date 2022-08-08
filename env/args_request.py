@@ -23,7 +23,8 @@ DEFAULT_ARGS = {
                 "use_gpu": True,
                 "gpu_ids": [0],
 
-                "learning_rate": 0.01,
+                "learning_rate": 0.1,
+                "min_lr": 1e-9,
                 "momentum": 0.9,
                 "weight_decay": 1e-4,
                 "nesterov": True,
@@ -34,6 +35,6 @@ DEFAULT_ARGS = {
                 "loss_func": 'cross_entropy',
 
                 "batch_limit": 99999,
-                "coff": 3,
+                "loss_back": 3,
                 "mu": 0.1
 }

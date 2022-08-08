@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from env.running_env import file_repo
+from env.running_env import file_repo, args
 from utils.objectIO import pickle_mkdir_save
 
 
@@ -9,6 +9,7 @@ class VContainer:
     def __init__(self):
         self.container = OrderedDict()
         self.keys = []
+        self.base = None
 
     def flash(self, key: str, element):
         if key not in self.container.keys():
@@ -20,10 +21,15 @@ class VContainer:
             self.container[key].append(element)
 
     def store(self, key: str):
-        path = file_repo.new_acc(key)[0]
+        path, path_id = file_repo.new_inter(key)
         pickle_mkdir_save(self.container[key], path)
+
+        if key == 'acc':
+            if args.curt_base:
+                args.running_base_path = path
+            else:
+                args.running_plus_path = path
 
     def store_all(self):
         for key in self.keys:
             self.store(key)
-

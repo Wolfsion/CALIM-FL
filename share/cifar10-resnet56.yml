@@ -1,10 +1,9 @@
-# test_rankfl.yaml
-
 # resource config
 exp_name: cifar10-resnet56
 
 # checkpoint config
 model: resnet56
+pre_train: True
 
 # dataset config
 dataset: cifar10
@@ -16,8 +15,10 @@ optim: sgd_pfl
 learning_rate: 0.01
 
 # scheduler config
-scheduler: step_lr
-warm_steps: 10
+scheduler: warmup_cos_lr
+min_lr: 0.0
+warm_steps: 5
+
 
 # federal config
 non_iid: hetro
