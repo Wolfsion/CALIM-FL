@@ -75,7 +75,7 @@ class Extender:
         for module in self.model.modules():
             if isinstance(module, nn.Conv2d) and pre_module is not None:
                 layers.append(pre_module)
-            if len(list(module.modules())) == 1:
+            if len(list(module.modules())) == 1 and not isinstance(module, nn.Sequential):
                 pre_module = module
         return layers
 

@@ -17,7 +17,6 @@ from utils.objectIO import pickle_mkdir_save, pickle_load
 
 class HRank(ABC):
     ERROR_MESS1 = "Generate mask must after calling get_rank()."
-    PATH = r"/home/xd/la/projects/HRankFL/res/milestone/vgg_16_bn/2022.07.15_22-21-23.npy"
 
     def __init__(self, wrapper: VWrapper) -> None:
         self.rank_list = []
@@ -71,8 +70,9 @@ class HRank(ABC):
         pass
 
     def get_rank(self, random: bool = False, store: bool = True) -> int:
-        if os.path.isfile(self.PATH):
-            self.deserialize_rank()
+
+        if os.path.isfile(args.rank_path):
+            self.deserialize_rank(args.rank_path)
         else:
             for cov_layer in self.reg_layers:
                 self.drive_hook(cov_layer, random)
@@ -99,6 +99,7 @@ class HRank(ABC):
                 global_logger.info('Illegal info_norm manner.')
                 exit(1)
 
+            # 之前得到的degree已经展成一维了，需要重新转换成二维
             degree = degree.reshape(params.size()[0:2])
 
             self.info_flow_list.append(torch.sum(degree, dim=0).numpy())
@@ -122,6 +123,9 @@ class HRank(ABC):
                 self.rank_list[index] += en_alpha * self.info_flow_list[index]
                 en_alpha *= en_shrink
         elif backward == 2:
+            import pdb
+            pdb.set_trace()
+
             for index in range(tail, -1, -1):
                 self.rank_list[index] += en_alpha * self.info_flow_list[index]
         else:
@@ -131,8 +135,8 @@ class HRank(ABC):
     def save_rank(self, path: str):
         pickle_mkdir_save(self.rank_list, path)
 
-    def deserialize_rank(self):
-        self.rank_list = pickle_load(self.PATH)
+    def deserialize_rank(self, path: str):
+        self.rank_list = pickle_load(path)
 
     def mask_prune(self, compress_rate: list):
         assert len(self.rank_list) != 0, self.ERROR_MESS1
@@ -141,7 +145,6 @@ class HRank(ABC):
         for rank, rate in zip(self.rank_list, compress_rate):
             param = self.prune_layers_params[param_index]
             param_index += 1
-
             f, c, w, h = param.size()
             pruned_num = int(rate * f)
             ind = np.argsort(rank)[pruned_num:]
@@ -165,7 +168,7 @@ class HRank(ABC):
             self.wrapper.step_run(batch_limit=batch_limit, train=True)
 
         # exp code
-        self.wrapper.container.store(args.exp_name)
+        self.wrapper.container.store(f"{args.exp_name}_acc")
         # exp code
 
         global_logger.info("Warm up finished======================>")

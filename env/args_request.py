@@ -30,11 +30,13 @@ DEFAULT_ARGS = {
                 "nesterov": True,
 
                 "step_size": 1,
-                "gamma": 0.5 ** (1 / 100),
+                "gamma": 0.5 ** (1 / 10000),
 
                 "loss_func": 'cross_entropy',
 
                 "batch_limit": 99999,
                 "loss_back": 3,
-                "mu": 0.1
+                "mu": 0.1,
+                "info_norm": 2,
+                "backward": 2
 }

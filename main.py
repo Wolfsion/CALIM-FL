@@ -14,4 +14,7 @@ if __name__ == "__main__":
     from dl.test_unit import main as dl_main
     from utils.test_unit import main as statistics_main
     dl_main()
-    # statistics_main()
+    # # statistics_main()
+
+    # from federal.test_unit import main as fl_main
+    # fl_main()

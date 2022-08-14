@@ -11,9 +11,9 @@ from dl.data.dataProvider import get_data
 from env.support_config import VDataSet
 
 
-def cifar10_user_indices(num_slices, seed: int = 2022):
-    cifar10 = get_data(VDataSet.CIFAR10, data_type="train")
-    hetero_dir_part = CIFAR10Partitioner(cifar10.targets, num_slices,
+def dataset_user_indices(dataset: VDataSet, num_slices, seed: int = 2022):
+    dataset = get_data(dataset, data_type="train")
+    hetero_dir_part = CIFAR10Partitioner(dataset.targets, num_slices,
                                          balance=None, partition="dirichlet",
                                          dir_alpha=0.3, seed=seed)
     return hetero_dir_part.client_dict

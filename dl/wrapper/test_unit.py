@@ -18,6 +18,9 @@ def exit_process(wrapper: VWrapper):
 def test_lr():
     net = resnet18(pretrained=False)
     optim = SGD(net.parameters(), lr=0.1)
+    for i in range(5):
+        optim.step()
+        print("Optim:", optim.state_dict()['param_groups'][0]['lr'])
     epoch = 200
     lr = WarmUPStepLR(optim)
     x = [i+1 for i in range(epoch)]
@@ -35,6 +38,9 @@ def test_lr():
         lr.step()
         z.append(optim.state_dict()['param_groups'][0]['lr'])
 
-    plt.plot(x, y)
-    plt.plot(x, z)
-    plt.show()
+    print(y)
+    print(z)
+
+    # plt.plot(x, y)
+    # plt.plot(x, z)
+    # plt.show()

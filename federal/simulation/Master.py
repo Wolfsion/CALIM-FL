@@ -33,6 +33,7 @@ class CVMaster(FLMaster):
             self.weight_redo()
 
             # self.curt_epoch += args.active_workers * args.local_epoch
+        self.global_performance_detail()
 
     def schedule_strategy(self):
         self.curt_selected = super().schedule_strategy()

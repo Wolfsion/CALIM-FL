@@ -24,11 +24,11 @@ class VContainer:
         path, path_id = file_repo.new_inter(key)
         pickle_mkdir_save(self.container[key], path)
 
-        if key == 'acc':
-            if args.curt_base:
-                args.running_base_path = path
-            else:
-                args.running_plus_path = path
+        # if key.find('acc') != -1:
+        if args.curt_base:
+            args.running_base_path = path
+        else:
+            args.running_plus_path = path
 
     def store_all(self):
         for key in self.keys:

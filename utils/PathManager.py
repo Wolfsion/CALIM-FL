@@ -84,11 +84,18 @@ class PathManager(ABC):
     def fetch_path(self, path_id: int) -> str:
         return self.reg_path[path_id]
 
+    def is_new(self, new: str) -> bool:
+        for path in self.reg_path:
+            if path == new:
+                return False
+        return True
+
     def sync_path(self, path: str) -> int:
         create_path(path)
-        self.reg_path.append(path)
-        ret = self.curt_id
-        self.curt_id += 1
+        if self.is_new(path):
+            self.reg_path.append(path)
+            self.curt_id += 1
+        ret = self.reg_path.index(path)
         return ret
 
     def latest_path(self) -> str:

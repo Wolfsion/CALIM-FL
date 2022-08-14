@@ -1,6 +1,7 @@
 from ruamel.yaml import YAML
 from copy import deepcopy
 
+from custom_path import vgg16_ranks, resnet110_ranks, mobilenetv2_ranks, resnet56_ranks
 from env.static_env import vgg16_candidate_rate, resnet56_candidate_rate, \
     resnet110_candidate_rate, mobile_candidate_rate
 from env.args_request import DEFAULT_ARGS
@@ -109,12 +110,20 @@ class ArgRepo:
 
     def runtime_attr_placeholder(self):
         self.curt_base = None
+        self.rank_path = None
         self.rank_norm_path = None
         self.rank_plus_path = None
         self.num_classes = None
         self.running_base_path = None
         self.running_plus_path = None
         self.prune_rate = None
+
+    @property
+    def exp_name(self) -> str:
+        if self.curt_base:
+            return f"{self._exp_name}-base"
+        else:
+            return f"{self._exp_name}-plus"
 
     def activate(self, strict: bool = False):
         options = self.parse_args()
@@ -159,12 +168,16 @@ class ArgRepo:
 
         if self.model == VModel.VGG16:
             self.prune_rate = vgg16_candidate_rate
+            self.rank_path = vgg16_ranks
         elif self.model == VModel.ResNet56:
             self.prune_rate = resnet56_candidate_rate
+            self.rank_path = resnet56_ranks
         elif self.model == VModel.ResNet110:
             self.prune_rate = resnet110_candidate_rate
+            self.rank_path = resnet110_ranks
         elif self.model == VModel.MobileNetV2:
             self.prune_rate = mobile_candidate_rate
+            self.rank_path = mobilenetv2_ranks
         else:
             print("The model is not supported.")
             exit(1)
@@ -179,3 +192,8 @@ class ArgRepo:
                f"scheduler:{scheduler}\n" \
                f"warm steps:{self.warm_steps}\n" \
                f"epoch:{self.local_epoch}"
+
+    @exp_name.setter
+    def exp_name(self, value):
+        self._exp_name = value
+

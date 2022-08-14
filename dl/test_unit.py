@@ -7,7 +7,7 @@ def test_center_train():
     cell = SingleCell()
     cell.run_model(train=True)
     cell.test_performance()
-    cell.exit_proc(check=True)
+    cell.exit_proc(check=False)
 
 
 def test_valid():
@@ -41,7 +41,7 @@ def plus_ori_compare():
     test_prune_model_plus()
 
     board = HRankBoard()
-    board.simp_acc_compare_img(baseline=args.acc_base_path, vrank=args.acc_plus_path)
+    board.simp_acc_compare_img(baseline=args.running_base_path, vrank=args.running_plus_path)
 
 
 def test_prune_model_init():
@@ -66,4 +66,4 @@ def total_auto_line():
 
 
 def main():
-    test_center_train()
+    plus_ori_compare()

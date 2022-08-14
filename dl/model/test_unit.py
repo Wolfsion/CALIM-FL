@@ -5,9 +5,11 @@ from env.support_config import VModel
 
 
 def test_model():
-    model = create_model(VModel.VGG16)
+    model = create_model(VModel.ResNet56)
     relucfg = [2, 6, 9, 13, 16, 19, 23, 26, 29, 33, 36, 39]
-    convcfg = [0, 3, 7, 10, 14, 17, 20, 24, 27, 30, 34, 37]
+    convcfg = [(3 * i + 2) for i in range(9 * 3 * 2 + 1)]
+
+    convcfg110 = [(3 * i + 2) for i in range(18 * 3 * 2 + 1)]
     # (cov_id - 1) * 4
     params = model.named_parameters()
     cnt = 0
@@ -17,22 +19,23 @@ def test_model():
     cnt = 0
     params = model.named_parameters()
     for name, item in params:
-        if cnt in relucfg:
+        if cnt in convcfg:
             print(f"---{name}:{item.size()}")
         cnt += 1
+
     mods = model.named_modules()
     for name, item in mods:
         print(f"+++{name}:")
     print(cnt)
 
-    for id in relucfg:
+    for id in convcfg:
         print(model.features[id])
 
 
 def test_sub_model():
-    model = create_model(VModel.VGG16)
+    model = create_model(VModel.ResNet56)
     ext = Extender(model)
-    layers = ext.conv_with_layers()
+    layers = ext.prune_layers()
     cov_idx = [2, 6, 9, 13, 16, 19, 23, 26, 29, 33, 36, 39, 42]
     for idx, layer in zip(cov_idx, layers):
         cov_layer = model.features[idx]

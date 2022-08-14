@@ -4,7 +4,11 @@ import warnings
 
 
 def dir_files(dir_path: str) -> list:
-    pass
+    all_files = []
+    for filepath, _, filenames in os.walk(dir_path):
+        for filename in filenames:
+            all_files.append(os.path.join(filepath, filename))
+    return all_files
 
 
 def create_path(f: str):
@@ -21,6 +25,11 @@ def touch_file(f):
 
 def remove_file(f_path: str):
     os.remove(f_path)
+
+
+def remove_files(f_paths: list):
+    for file in f_paths:
+        os.remove(file)
 
 
 def fetch_file_name(f_path: str):

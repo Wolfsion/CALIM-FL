@@ -19,7 +19,7 @@ class ExitManager:
         self.wrapper.save_checkpoint(file)
 
     def running_freeze(self):
+        self.wrapper.container.store_all()
         paths = "\n".join(file_repo.reg_path)
         file, _ = file_repo.new_exp(f"{args.exp_name}_paths")
         str_save(paths, file)
-        self.wrapper.container.store_all()

@@ -164,9 +164,10 @@ class VWrapper:
                                    % (process, batch_idx, self.latest_loss, self.latest_acc, correct, total))
             self.curt_batch += 1
 
-        self.curt_epoch += 1
-        self.container.flash('acc', self.latest_acc)
-        self.scheduler_step()
+        if train:
+            self.curt_epoch += 1
+            self.container.flash(f"{args.exp_name}_acc", self.latest_acc)
+            self.scheduler_step()
 
         return correct, total, self.latest_loss
 
@@ -195,8 +196,8 @@ class VWrapper:
             param_group["lr"] *= factor
 
     def show_lr(self):
-        for param_group in self.optimizer.param_groups:
-            global_logger.info(f"The current learning rate: {param_group['lr']}======>")
+        lr = self.optimizer.state_dict()['param_groups'][0]['lr']
+        global_logger.info(f"The current learning rate: {lr}======>")
 
     def sync_tensor(self, tensor: torch.Tensor) -> torch.Tensor:
         return next(self.device.on_tensor(tensor))
@@ -208,7 +209,10 @@ class VWrapper:
         pickle_mkdir_save(exp_checkpoint, file_path)
 
     def load_checkpoint(self, path: str, model_key: str = 'state_dict'):
-        checkpoint = pickle_load(path)
+        if path.find('.pt') == -1:
+            checkpoint = pickle_load(path)
+        else:
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
         assert model_key in checkpoint.keys(), self.ERROR_MESS5
         self.device.load_model(checkpoint[model_key])
 

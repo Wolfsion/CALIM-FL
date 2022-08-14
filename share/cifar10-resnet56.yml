@@ -30,6 +30,6 @@ federal_round: 100
 # local_epoch: 5
 
 ## center train
-local_epoch: 100
+local_epoch: 10
 test_batch_limit: 5
 

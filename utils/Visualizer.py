@@ -60,7 +60,7 @@ class HRankBoard:
     # key:acc_name, value:acc_txt_filepath
     def simp_acc_compare_img(self, **paths):
         pd_ori_data = []
-        for key, path in paths:
+        for key, path in paths.items():
             pickle_obj = pickle_load(path)
             sub_list = [[num, ind + 1, key] for ind, num in enumerate(pickle_obj)]
             pd_ori_data.extend(sub_list)

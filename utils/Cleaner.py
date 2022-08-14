@@ -3,7 +3,7 @@ import re
 import datetime as dt
 
 from env.running_env import milestone_base, image_base, exp_base, log_base
-from utils.objectIO import remove_file, fetch_file_name, dir_files
+from utils.objectIO import remove_file, fetch_file_name, dir_files, remove_files
 
 
 class FileCleaner:
@@ -51,5 +51,4 @@ class FileCleaner:
 
     def clear_files(self):
         to_del = self.find_files()
-        for f_path in to_del:
-            remove_file(f_path)
+        remove_files(to_del)
