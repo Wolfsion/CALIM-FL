@@ -3,7 +3,7 @@ exp_name: cifar100-resnet110
 
 # checkpoint config
 model: resnet110
-pre_train: True
+# pre_train: True
 
 # dataset config
 dataset: cifar100
@@ -20,6 +20,7 @@ min_lr: 0.0
 warm_steps: 10
 
 # federal config
+federal: True
 non_iid: hetro
 workers: 100
 active_workers: 10
@@ -29,6 +30,6 @@ federal_round: 500
 # local_epoch: 5
 
 ## center train
-local_epoch: 10
-test_batch_limit: 5
+local_epoch: 30
+test_batch_limit: 128
 

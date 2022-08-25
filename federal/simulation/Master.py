@@ -3,6 +3,7 @@
 import torch.utils.data as tdata
 
 from dl.SingleCell import SingleCell
+from env.running_env import global_logger
 from federal.simulation.FLnodes import FLMaster
 from federal.simulation.Worker import CVWorker
 
@@ -26,13 +27,15 @@ class CVMaster(FLMaster):
 
     def union_run(self, rounds: int):
         for i in range(rounds):
+            global_logger.info(f"======Federal Round: {i+1}======")
             self.schedule_strategy()
             self.info_sync()
             self.drive_workers()
             self.info_aggregation()
             self.weight_redo()
-
             # self.curt_epoch += args.active_workers * args.local_epoch
+
+        global_logger.info(f"Federal train finished======>")
         self.global_performance_detail()
 
     def schedule_strategy(self):
@@ -80,7 +83,6 @@ class CVMaster(FLMaster):
         workers_cells = []
         for index in self.curt_selected:
             workers_cells.append(self.workers_nodes[index].cell)
-            self.workers_nodes[index].cell.show_lr()
         self.merge.all_sync(workers_cells, 0)
 
     def drive_workers(self):

@@ -30,7 +30,7 @@ class SingleCell:
         self.latest_feed_amount = 0
 
         # 当前训练的批次
-        self.train_epoch = 0
+        self.train_epoch = 1
 
         self.init_model_dataloader()
         self.init_wrapper()
@@ -53,7 +53,9 @@ class SingleCell:
                                 args.optim, args.scheduler, args.loss_func)
         self.wrapper.init_device(args.use_gpu, args.gpu_ids)
         self.wrapper.init_optim(args.learning_rate, args.momentum, args.weight_decay, args.nesterov)
-        self.wrapper.init_scheduler_loss(args.step_size, args.gamma, args.local_epoch, args.warm_steps, args.min_lr)
+        total_epoch = args.local_epoch * args.federal_round * args.active_workers if args.federal \
+            else args.local_epoch
+        self.wrapper.init_scheduler_loss(args.step_size, args.gamma, total_epoch, args.warm_steps, args.min_lr)
         if args.pre_train:
             self.wrapper.load_checkpoint(file_repo.model_path)
 
@@ -76,15 +78,15 @@ class SingleCell:
                   batch_limit: int = 0) -> int:
         loss = 0.0
         self.latest_feed_amount = 0
-        self.train_epoch += args.local_epoch
         for i in range(args.local_epoch):
-            global_logger.info(f"Train epoch:{i+1}======>")
+            global_logger.info(f"******The current train epoch: {self.train_epoch+i}******")
             if batch_limit == 0:
                 _, total, loss = self.wrapper.step_run(args.batch_limit, train, pre_params)
             else:
                 _, total, loss = self.wrapper.step_run(batch_limit, train, pre_params)
             self.latest_feed_amount += total
             self.wrapper.show_lr()
+        self.train_epoch += args.local_epoch
         return loss
 
     def test_performance(self):
@@ -96,8 +98,8 @@ class SingleCell:
     def show_lr(self):
         self.wrapper.show_lr()
 
-    def prune_model(self, plus: bool = True):
-        path_id = self.prune_ext.get_rank()
+    def prune_model(self, plus: bool = True, random: bool = False):
+        path_id = self.prune_ext.get_rank(random=random)
         args.rank_norm_path = file_repo.fetch_path(path_id)
         if plus:
             path_id = self.prune_ext.rank_plus(info_norm=args.info_norm, backward=args.backward)

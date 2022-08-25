@@ -20,11 +20,12 @@ warm_steps: 5
 min_lr: 0.0
 
 # federal config
+federal: True
 non_iid: hetro
 workers: 100
 active_workers: 10
-federal_round: 100
+federal_round: 150
 
 local_epoch: 10
-test_batch_limit: 5
+test_batch_limit: 128
 

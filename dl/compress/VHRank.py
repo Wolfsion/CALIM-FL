@@ -50,7 +50,7 @@ class HRank(ABC):
 
     def drive_hook(self, sub_module: nn.Module, random: bool = False):
         handler = sub_module.register_forward_hook(self.get_feature_hook)
-        self.notify_feed_run()
+        self.notify_feed_run(random)
         handler.remove()
         self.rank_list.append(self.feature_result.numpy())
         self.cache_flash()
@@ -63,15 +63,18 @@ class HRank(ABC):
         self.rank_list.clear()
         self.cache_flash()
 
-    def notify_feed_run(self):
-        self.wrapper.step_run(rank_limit)
+    def notify_feed_run(self, random: bool):
+        if random:
+            self.wrapper.random_run(rank_limit)
+        else:
+            self.wrapper.step_run(rank_limit)
 
     def notify_test(self, loader: tdata.dataloader):
         pass
 
     def get_rank(self, random: bool = False, store: bool = True) -> int:
 
-        if os.path.isfile(args.rank_path):
+        if os.path.isfile(args.rank_path) and not random:
             self.deserialize_rank(args.rank_path)
         else:
             for cov_layer in self.reg_layers:
@@ -123,11 +126,12 @@ class HRank(ABC):
                 self.rank_list[index] += en_alpha * self.info_flow_list[index]
                 en_alpha *= en_shrink
         elif backward == 2:
-            import pdb
-            pdb.set_trace()
-
+            accumulate = 0
             for index in range(tail, -1, -1):
                 self.rank_list[index] += en_alpha * self.info_flow_list[index]
+
+                accumulate += en_alpha * self.info_flow_list[index]
+                self.rank_list[index] += accumulate
         else:
             global_logger.info('Illegal backward manner.')
             exit(1)

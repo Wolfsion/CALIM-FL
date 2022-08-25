@@ -34,13 +34,16 @@ CIFAR100_STD = [0.2673342858792401, 0.2564384629170883, 0.27615047132568404]
 vgg16_candidate_rate = [0.45]*7 + [0.78]*5
 
 # resnet56
-resnet56_candidate_rate = [0.] + [0.18]*29
+# resnet56_candidate_rate = [0.] + [0.18]*29
+resnet56_candidate_rate = [0.1] + [0.60]*35 + [0.0]*2 + [0.6]*6 + [0.4]*3 + \
+                          [0.1] + [0.4] + [0.1] + [0.4] + [0.1] + [0.4] + [0.1] + [0.4]
 
 # resnet110
-resnet110_candidate_rate = [0.] + [0.2]*2 + [0.3]*18 + [0.35]*36
+# resnet110_candidate_rate = [0.] + [0.2]*2 + [0.3]*18 + [0.35]*36
+resnet110_candidate_rate = [0.1] + [0.40]*36 + [0.40]*36 + [0.4]*36
 
 # mobilenetv2
-mobile_candidate_rate = [0.] + [0.3]*7
+mobile_candidate_rate = [0.] + [0.3]*51
 
 # Others
 MAX_HOOK_LAYER = 50

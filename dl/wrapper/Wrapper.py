@@ -100,25 +100,27 @@ class VWrapper:
         if dataloader is None:
             dataloader = self.loader
         inputs, label = next(iter(dataloader))
-        size = inputs.size()
-        return size
+        data_size = inputs.size()
+        label_size = label.size()
+        return data_size, label_size
 
     def curt_state_info(self):
         pass
 
-    # def feed_random_run(self):
-    #     with torch.no_grad():
-    #         for batch_idx in range(rank_limit):
-    #             global_logger.info('using random data...')
-    #             inputs = torch.randn(self.random_batch_size, 3, 32, 32)
-    #             targets = torch.randn(self.random_batch_size, self.random_labels)
-    #             self.wrapper.step(inputs, targets)
+    def random_run(self, batch_limit: int):
+        with torch.no_grad():
+            global_logger.info('Using random data.======>')
+            data_size, label_size = self.running_scale()
+            for batch_idx in range(batch_limit):
+                inputs = torch.randn(data_size)
+                targets = torch.randn(label_size)
+                inputs, labels = self.device.on_tensor(inputs, targets)
+                pred = self.model(inputs)
 
     # 当需要投喂测试集时，传入dataloader
     # 实现random数据投喂
     def step_run(self, batch_limit: int, train: bool = False,
-                 pre_params: Iterator = None, loader: tdata.dataloader = None,
-                 random: bool = False) -> (int, float, int):
+                 pre_params: Iterator = None, loader: tdata.dataloader = None) -> (int, float, int):
         if train:
             self.model.train()
         else:

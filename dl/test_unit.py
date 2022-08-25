@@ -44,8 +44,21 @@ def plus_ori_compare():
     board.simp_acc_compare_img(baseline=args.running_base_path, vrank=args.running_plus_path)
 
 
-def test_prune_model_init():
-    pass
+def test_prune_model_random():
+    cell = SingleCell(prune=True)
+    cell.prune_model(random=True)
+    cell.test_performance()
+    cell.exit_proc()
+
+
+def plus_random_compare():
+    args.curt_base = True
+    test_prune_model_plus()
+    args.curt_base = False
+    test_prune_model_random()
+
+    board = HRankBoard()
+    board.simp_acc_compare_img(vrank=args.running_base_path, random=args.running_plus_path)
 
 
 def test_prune_model_interval():

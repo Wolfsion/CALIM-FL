@@ -16,6 +16,10 @@ def simulation_federal_process():
     master_node.union_run(args.federal_round)
     # protocol implementation
 
+    master_node.cell.prune_model()
+    master_node.cell.test_performance()
+    master_node.cell.exit_proc()
+
 
 def main():
     simulation_federal_process()

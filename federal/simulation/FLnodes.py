@@ -16,7 +16,7 @@ class FLMaster(ABC):
     def __init__(self, workers_num: int, schedule_num: int, local_epoch: int, master_cell: SingleCell):
         self.workers = workers_num
         self.plan = schedule_num
-        self.pace = local_epoch * schedule_num / 2
+        self.pace = local_epoch * schedule_num // 2
         self.cell = master_cell
         self.merge = FedAvg(master_cell.access_model().state_dict())
 

@@ -96,6 +96,7 @@ class ArgRepo:
         self.step_size = None
         self.gamma = None
         self.warm_steps = None
+        self.federal = None
         self.non_iid = None
         self.workers = None
         self.active_workers = None
@@ -181,6 +182,11 @@ class ArgRepo:
         else:
             print("The model is not supported.")
             exit(1)
+
+        if self.federal:
+            self.pre_train = False
+        else:
+            self.pre_train = True
 
     # call after mount_args()
     def get_snapshot(self) -> str:

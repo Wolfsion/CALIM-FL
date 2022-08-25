@@ -3,7 +3,7 @@ from enum import Enum, unique
 import numpy as np
 import pandas as pd
 import torch
-from torch import nn
+from torch import nn, optim
 
 from dl.data.dataProvider import get_data_loaders, get_data_loader
 from dl.data.samplers import dataset_user_indices
@@ -51,11 +51,10 @@ def test_lis(new: str):
             return
     print("Not Exist")
 
-
-if __name__ == "__main__":
+def test_resnet():
     # clear_file()
     from torchsummary import summary
-    model = create_model(VModel.ResNet56)
+    model = create_model(VModel.MobileNetV2)
     # model = create_model(VModel.ResNet110)
     summary(model, input_size=(3, 32, 32), batch_size=-1, device="cpu")
 
@@ -64,41 +63,40 @@ if __name__ == "__main__":
     layers = []
     pre_module = None
     for name, module in model.named_modules():
-        print(name, '---', module)
+        # print(name, '---', module)
         if isinstance(module, nn.Conv2d) and pre_module is not None:
             layers.append(pre_module)
         if len(list(module.modules())) == 1:
             pre_module = module
 
     fl = ext.feature_map_layers()
-    print(len(fl))
+    print('+++', len(fl))
     print(fl)
-
 
     ori_layers = []
     params = model.named_parameters()
     index = 0
 
-    for cov_id in range(1, 56):
-        for name, param in params:
-            if index == (cov_id - 1) * 3:
-                print(name)
-                ori_layers.append(param)
-            elif (cov_id - 1)*3 < index < cov_id*3:
-                print('+++', name)
-                ori_layers.append(param)
-            index += 1
-    print(index)
+    # for cov_id in range(1, 56):
+    #     for name, param in params:
+    #         if index == (cov_id - 1) * 3:
+    #             print(name)
+    #             ori_layers.append(param)
+    #         elif (cov_id - 1)*3 < index < cov_id*3:
+    #             print('+++', name)
+    #             ori_layers.append(param)
+    #         index += 1
+    # print(index)
 
-    compress_rate = [0.] + [0.18]*29
+    compress_rate = [0.] + [0.18] * 29
     stage_repeat = [9, 9, 9]
     stage_out_channel = [16] + [16] * 9 + [32] * 9 + [64] * 9
 
     stage_oup_cprate = []
     stage_oup_cprate += [compress_rate[0]]
-    for i in range(len(stage_repeat)-1):
-        stage_oup_cprate += [compress_rate[i+1]] * stage_repeat[i]
-    stage_oup_cprate +=[0.] * stage_repeat[-1]
+    for i in range(len(stage_repeat) - 1):
+        stage_oup_cprate += [compress_rate[i + 1]] * stage_repeat[i]
+    stage_oup_cprate += [0.] * stage_repeat[-1]
     mid_cprate = compress_rate[len(stage_repeat):]
 
     print(len(mid_cprate))
@@ -123,4 +121,12 @@ if __name__ == "__main__":
     b = torch.sum(a, dim=0)
 
     print(b.size())
+
+
+if __name__ == "__main__":
+    a = torch.randn(32, 3, 32, 32)
+    size = a.size()
+    b = torch.randn(size)
+    print(b)
+
     print("----------------------")

@@ -27,8 +27,8 @@ resnet110_model = r'res/checkpoint/resnet/ResNet110.snap'
 mobilenetv2_model = r'res/checkpoint/mobilenet/MobileNetV2.snap'
 
 vgg16_ranks = r'res/milestone/vgg_16_bn/Norm_Rank---08.13.npy'
-resnet56_ranks = r'res/milestone/resnet_56/Norm_Rank---08.14.npy'
-resnet110_ranks = r'res/milestone/ResNet110/Norm_Rank---08.14.npy'
+resnet56_ranks = r'res/milestone/resnet_56/none.npy'
+resnet110_ranks = r'res/milestone/ResNet110/none.npy'  # Norm_Rank---08.14.npy
 mobilenetv2_ranks = r'res/milestone/MobileNetV2/Norm_Rank---08.13.npy'
 
 
