@@ -38,5 +38,7 @@ DEFAULT_ARGS = {
                 "loss_back": 3,
                 "mu": 0.1,
                 "info_norm": 2,
-                "backward": 2
+                "backward": 2,
+                "random_data": True,
+                "auto_inter": False
 }

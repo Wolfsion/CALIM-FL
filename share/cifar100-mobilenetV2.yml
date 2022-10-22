@@ -19,7 +19,7 @@ min_lr: 0
 warm_steps: 10
 
 # federal config
-non_iid: hetro
+non_iid: hetero
 workers: 100
 active_workers: 10
 federal_round: 400

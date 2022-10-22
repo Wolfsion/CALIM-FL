@@ -1,20 +1,23 @@
 import math
+from copy import deepcopy
 from typing import Iterator
 import torch.nn as nn
 import torch.utils.data as tdata
 
-from dl.compress.HyperProvider import IntervalProvider
+from dl.compress.HyperProvider import IntervalProvider, RateProvider
 from dl.compress.VHRank import HRank
 from dl.model.model_util import create_model
 from dl.wrapper.ExitDriver import ExitManager
 from dl.wrapper.Wrapper import VWrapper
-from env.running_env import args, file_repo
+from env.running_env import args, file_repo, global_container
 from dl.data.dataProvider import get_data_loader
 from env.running_env import global_logger
 from env.static_env import wu_epoch, wu_batch, vgg16_candidate_rate
 
 
 class SingleCell:
+    ERROR_MESS1 = "Test must specify batch_limit."
+
     def __init__(self, dataloader: tdata.dataloader = None, prune: bool = False):
         self.model = None
         self.dataloader = dataloader
@@ -36,7 +39,9 @@ class SingleCell:
         self.init_wrapper()
         if prune:
             self.prune_ext = HRank(self.wrapper)
-            self.hyper = IntervalProvider()
+            self.hyper_inter = IntervalProvider()
+            self.hyper_rate = RateProvider(args.prune_rate, args.federal_round, args.check_inter)
+
         self.exit_manager = ExitManager(self.wrapper)
 
     # init
@@ -76,18 +81,26 @@ class SingleCell:
     def run_model(self, train: bool = False,
                   pre_params: Iterator = None,
                   batch_limit: int = 0) -> int:
-        loss = 0.0
+        sum_loss = 0.0
         self.latest_feed_amount = 0
-        for i in range(args.local_epoch):
-            global_logger.info(f"******The current train epoch: {self.train_epoch+i}******")
-            if batch_limit == 0:
-                _, total, loss = self.wrapper.step_run(args.batch_limit, train, pre_params)
-            else:
-                _, total, loss = self.wrapper.step_run(batch_limit, train, pre_params)
-            self.latest_feed_amount += total
-            self.wrapper.show_lr()
-        self.train_epoch += args.local_epoch
-        return loss
+
+        if train:
+            for i in range(args.local_epoch):
+                global_logger.info(f"******The current train epoch: {self.train_epoch+i}******")
+                if batch_limit == 0:
+                    cort, total, loss = self.wrapper.step_run(args.batch_limit, train, pre_params)
+                else:
+                    cort, total, loss = self.wrapper.step_run(batch_limit, train, pre_params)
+                sum_loss += loss
+                self.latest_feed_amount += total
+                self.wrapper.show_lr()
+            self.train_epoch += args.local_epoch
+            return sum_loss / args.local_epoch
+        else:
+            assert batch_limit != 0, self.ERROR_MESS1
+            cort, total, loss = self.wrapper.step_run(batch_limit, train=False)
+            global_container.flash(f'{args.exp_name}-test_acc', cort/total*100)
+            return loss
 
     def test_performance(self):
         self.wrapper.valid_performance(self.test_dataloader)
@@ -98,31 +111,35 @@ class SingleCell:
     def show_lr(self):
         self.wrapper.show_lr()
 
-    def prune_model(self, plus: bool = True, random: bool = False):
+    def prune_process(self, random: bool, plus: bool, federal: bool = args.federal):
         path_id = self.prune_ext.get_rank(random=random)
         args.rank_norm_path = file_repo.fetch_path(path_id)
         if plus:
             path_id = self.prune_ext.rank_plus(info_norm=args.info_norm, backward=args.backward)
             args.rank_plus_path = file_repo.fetch_path(path_id)
 
-        self.prune_ext.mask_prune(args.prune_rate)
-        self.prune_ext.warm_up(wu_epoch, wu_batch)
+        if args.is_prune and not args.rank_plus:
+            self.prune_ext.mask_prune(args.prune_rate)
+        else:
+            self.prune_ext.mask_prune(self.hyper_rate.get_curt_rate())
+        if not federal:
+            self.prune_ext.warm_up(wu_epoch, wu_batch)
 
-    def run_prune_model(self, lag: int = 10):
-        for i in range(1, args.local_epoch+1):
-            global_logger.info(f"Train epoch:{i + 1}======>")
-            self.wrapper.step_run(args.batch_limit, train=True)
+    def prune_model(self, plus: bool = True, random: bool = False, auto_inter: bool = False):
+        if auto_inter:
+            self.prune_ext.get_rank_simp(random=random)
+            self.hyper_inter.push_container(deepcopy(self.prune_ext.rank_list))
+            if self.hyper_inter.is_timing():
+                global_logger.info(f"Will prune in this round.")
+                self.prune_process(random=random, plus=plus)
+            else:
+                global_logger.info(f"Do not prune in this round.")
+        else:
+            global_logger.info(f"Will prune in this round.")
+            self.prune_process(random=random, plus=plus)
 
-            if i % lag == 0:
-                self.prune_ext.get_rank(store=False)
-                self.hyper.push_simp_container(self.prune_ext.rank_list)
-                if self.hyper.is_timing_simple():
-                    self.prune_ext.mask_prune(args.prune_rate)
-                    self.prune_ext.warm_up(args.local_epoch - i, wu_batch)
-
-    def exit_proc(self, check: bool = False):
+    def exit_proc(self, check: bool = False, one_key: str = None):
         if check:
             self.exit_manager.checkpoint_freeze()
         self.exit_manager.config_freeze()
-        self.exit_manager.running_freeze()
-
+        self.exit_manager.running_freeze(one_key)

@@ -22,7 +22,7 @@ class FileType(Enum):
     IMG_TYPE = '.png'
     LOG_TYPE = '.log'
     EXP_TYPE = '.txt'
-    INTER_TYPE = '.inter'
+    SEQ_TYPE = '.seq'
     RANK_TYPE = '.npy'
     CHECKPOINT_TYPE = '.snap'
 
@@ -74,7 +74,6 @@ class PathManager(ABC):
     def derive_path(self, exp_base: str, image_base: str, milestone_base: str, log_base: str):
         path_base, file = os.path.split(self.model_path)
         _file_name, file_postfix = os.path.splitext(file)
-
         self.image_path = os.path.join(image_base, _file_name)
         self.mile_path = os.path.join(milestone_base, _file_name)
         self.log_path = os.path.join(log_base, _file_name)
@@ -135,7 +134,7 @@ class HRankPathManager(PathManager):
         file_id = self.sync_path(new_file)
         return new_file, file_id
 
-    def new_inter(self, name: str = None) -> (str, int):
-        new_file = os.path.join(self.mile_path, file_name(FileType.INTER_TYPE, name))
+    def new_seq(self, name: str = None) -> (str, int):
+        new_file = os.path.join(self.mile_path, file_name(FileType.SEQ_TYPE, name))
         file_id = self.sync_path(new_file)
         return new_file, file_id

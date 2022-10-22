@@ -24,7 +24,7 @@ pip install thop onnx fedlab PyHessian scikit-learn seaborn ruamel.yaml
 |    optim    | sgd, sgd_pfl, adam                                           |
 |  scheduler  | step_lr, cosine_lr, reduce_lr, warmup_cos_lr, warmup_step_lr |
 |    loss     | cross_entropy                                                |
-|   non-iid   | hetro, shards                                                |
+|   non-iid   | hetero, shards                                                |
 
    
 

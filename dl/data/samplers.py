@@ -12,21 +12,31 @@ from dl.data.dataProvider import get_data
 from env.support_config import VDataSet
 
 
-def dataset_user_indices(dataset_type: VDataSet, num_slices, seed: int = 2022):
+def dataset_user_indices(dataset_type: VDataSet, num_slices, non_iid: str, seed: int = 2022):
     dataset = get_data(dataset_type, data_type="train")
     if dataset_type == VDataSet.CIFAR10:
-        hetero_dir_part = CIFAR10Partitioner(dataset.targets, num_slices,
-                                             balance=None, partition="dirichlet",
-                                             dir_alpha=0.3, seed=seed)
+        if non_iid == 'hetero':
+            dir_part = CIFAR10Partitioner(dataset.targets, num_slices,
+                                          balance=None, partition="dirichlet",
+                                          dir_alpha=0.3, seed=seed)
+        else:
+            dir_part = CIFAR10Partitioner(dataset.targets, num_slices,
+                                          balance=None, partition="shards",
+                                          num_shards=200, seed=seed)
     elif dataset_type == VDataSet.CIFAR100:
-        hetero_dir_part = CIFAR100Partitioner(dataset.targets, num_slices,
-                                              balance=None, partition="dirichlet",
-                                              dir_alpha=0.3, seed=seed)
+        if non_iid == 'hetero':
+            dir_part = CIFAR100Partitioner(dataset.targets, num_slices,
+                                           balance=None, partition="dirichlet",
+                                           dir_alpha=0.3, seed=seed)
+        else:
+            dir_part = CIFAR100Partitioner(dataset.targets, num_slices,
+                                           balance=None, partition="shards",
+                                           num_shards=200, seed=seed)
     else:
-        global_logger.error("Not supported dataset type.")
-        hetero_dir_part = None
+        global_logger.error("Not supported non_iid type.")
+        dir_part = None
         exit(1)
-    return hetero_dir_part.client_dict
+    return dir_part.client_dict
 
 
 class NSampler(Sampler):
@@ -133,13 +143,6 @@ class CF10NIIDSampler(LSampler):
                                              balance=None, partition="dirichlet",
                                              dir_alpha=0.3, seed=self.seed)
         self.users_indices = hetero_dir_part.client_dict
-        # shards_part = CIFAR10Partitioner(cifar10.targets,
-        #                                  num_slices,
-        #                                  balance=None,
-        #                                  partition="shards",
-        #                                  num_shards=200,
-        #                                  seed=self.seed)
-        # self.users_indices = shards_part.client_dict
         range_partition = list(range(num_slices))
         new_list_ind = [[] for _ in range(num_slices)]
 

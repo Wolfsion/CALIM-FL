@@ -3,6 +3,8 @@ from enum import Enum, unique
 import numpy as np
 import pandas as pd
 import torch
+from scipy import spatial
+from sklearn.metrics import pairwise_distances
 from torch import nn, optim
 
 from dl.data.dataProvider import get_data_loaders, get_data_loader
@@ -17,7 +19,7 @@ from env.support_config import VModel
 from utils.Cleaner import FileCleaner
 from utils.PathManager import FileType
 from utils.Visualizer import HRankBoard
-from utils.objectIO import touch_file, remove_file
+from utils.objectIO import touch_file, remove_file, pickle_mkdir_save, str_save
 
 
 def path_name():
@@ -50,6 +52,7 @@ def test_lis(new: str):
             print("Exist")
             return
     print("Not Exist")
+
 
 def test_resnet():
     # clear_file()
@@ -124,9 +127,6 @@ def test_resnet():
 
 
 if __name__ == "__main__":
-    a = torch.randn(32, 3, 32, 32)
-    size = a.size()
-    b = torch.randn(size)
-    print(b)
-
+    from dl.compress.test_unit import main
+    main()
     print("----------------------")

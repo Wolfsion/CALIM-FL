@@ -1,5 +1,5 @@
 # resource config
-exp_name: b2n2
+exp_name: cifar10-vgg16-vrank
 
 # checkpoint config
 model: vgg16
@@ -7,7 +7,8 @@ pre_train: True
 
 # dataset config
 dataset: cifar10
-batch_size: 16
+batch_size: 32
+batch_limit: 256
 
 # optimizer config
 # optim: sgd
@@ -16,14 +17,6 @@ learning_rate: 0.1
 
 # scheduler config
 scheduler: step_lr
-warm_steps: 10
 
-# prune config
-rank_path: none
-info_norm: 2
-backward: 2
-en_alpha: 0.5
-en_shrink: 0.95
-
-# federal config
-local_epoch: 300
+min_lr: 0.0
+en_alpha: 0.7

@@ -10,7 +10,7 @@ class CVWorker(FLWorker):
     def __init__(self, worker_id: int, worker_cell: SingleCell):
         super().__init__(worker_id, worker_cell)
 
-    def local_train(self, global_params: Iterator):
+    def local_train(self, global_params: Iterator = None):
         global_logger.info(f'------Train from device: {self.id}------')
         self.cell.run_model(train=True, pre_params=global_params)
         # self.cell.show_lr()

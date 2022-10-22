@@ -25,10 +25,10 @@ def get_ori_lists():
     return [range(100), random_list(), random_list(), random_label()]
 
 def get_ori_dict():
-    return {'index':np.array(range(100)),
-            'FLOPs':np.array(random_list()),
-            'Acc':np.array(random_list()),
-            'class':np.array(random_label())}
+    return {'index': np.array(range(100)),
+            'FLOPs': np.array(random_list()),
+            'Acc': np.array(random_list()),
+            'class': np.array(random_label())}
 
 def get_lists():
     return list(zip(range(100), random_list(), random_list(), random_label()))

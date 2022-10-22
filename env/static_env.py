@@ -1,4 +1,6 @@
 from enum import Enum, unique
+
+from utils.VContainer import VContainer
 from utils.Vlogger import VLogger
 
 # Uniform const
@@ -54,8 +56,15 @@ rank_limit = 10
 YAML_PATH = r'share/default_config.yml'
 
 # Warm-up config
-wu_epoch = 5
-wu_batch = 8192
+# wu_epoch = 50
+# wu_batch = 9128
+wu_epoch = 1
+wu_batch = 32
 
 # acc_info
 print_interval = 10
+
+# pruning hyper
+pruning_inter = 10
+
+

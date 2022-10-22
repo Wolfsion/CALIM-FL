@@ -3,7 +3,7 @@ import re
 import datetime as dt
 
 from env.running_env import milestone_base, image_base, exp_base, log_base
-from utils.objectIO import remove_file, fetch_file_name, dir_files, remove_files
+from utils.objectIO import fetch_file_name, dir_files, remove_files
 
 
 class FileCleaner:

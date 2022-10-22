@@ -1,0 +1,34 @@
+# resource config
+exp_name: cifar10-vgg16-ult
+
+# checkpoint config
+model: vgg16
+# pre_train: True
+
+# dataset config
+dataset: cifar10
+batch_size: 32
+
+# optimizer config
+# optim: sgd
+optim: sgd
+learning_rate: 0.1
+
+# scheduler config
+scheduler: warmup_cos_lr
+warm_steps: 5
+min_lr: 0.0
+
+# federal config
+federal: True
+non_iid: hetero
+workers: 100
+active_workers: 10
+federal_round: 10
+
+local_epoch: 1
+test_batch_limit: 5
+
+check_inter: 1
+fedavg_test: True
+

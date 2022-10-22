@@ -1,5 +1,6 @@
 import os.path
 from abc import ABC
+from copy import deepcopy
 from typing import List
 import numpy as np
 import torch
@@ -21,6 +22,8 @@ class HRank(ABC):
     def __init__(self, wrapper: VWrapper) -> None:
         self.rank_list = []
         self.info_flow_list = []
+        self.degrees = []
+
         self.prune_mask = None
         self.feature_result: torch.Tensor = torch.tensor(0.)
         self.total: torch.Tensor = torch.tensor(0.)
@@ -32,6 +35,7 @@ class HRank(ABC):
         self.flow_layers_params = model_percept.flow_layers_parameters()
         self.prune_layers = model_percept.prune_layers()
         self.prune_layers_params = model_percept.prune_layer_parameters()
+        self.accumulate = [0 for _ in range(len(self.flow_layers_params))]
 
     # get feature map of certain layer via hook
     def get_feature_hook(self, module, input, output):
@@ -61,6 +65,9 @@ class HRank(ABC):
 
     def rank_flash(self):
         self.rank_list.clear()
+        self.info_flow_list.clear()
+        self.degrees.clear()
+        self.accumulate = [0 for _ in range(len(self.flow_layers_params))]
         self.cache_flash()
 
     def notify_feed_run(self, random: bool):
@@ -73,12 +80,15 @@ class HRank(ABC):
         pass
 
     def get_rank(self, random: bool = False, store: bool = True) -> int:
-
+        self.rank_flash()
         if os.path.isfile(args.rank_path) and not random:
             self.deserialize_rank(args.rank_path)
         else:
             for cov_layer in self.reg_layers:
                 self.drive_hook(cov_layer, random)
+
+        # for cov_layer in self.reg_layers:
+        #     self.drive_hook(cov_layer, random)
 
         path_id = -1
         if store:
@@ -86,6 +96,11 @@ class HRank(ABC):
             self.save_rank(path)
         global_logger.info("Rank init finished======================>")
         return path_id
+
+    def get_rank_simp(self, random: bool = True):
+        self.rank_flash()
+        cov_layer = self.reg_layers[0]
+        self.drive_hook(cov_layer, random)
 
     def rank_plus(self, info_norm: int = 1, backward: int = 1) -> int:
         for params in self.flow_layers_params:
@@ -101,17 +116,14 @@ class HRank(ABC):
                 degree = 0
                 global_logger.info('Illegal info_norm manner.')
                 exit(1)
-
             # 之前得到的degree已经展成一维了，需要重新转换成二维
             degree = degree.reshape(params.size()[0:2])
-
+            self.degrees.append(degree.numpy())
             self.info_flow_list.append(torch.sum(degree, dim=0).numpy())
-
             global_logger.info(f"Finish {params.size()} weight......")
         self.info_flow_list = arrays_normalization(self.info_flow_list,
                                                    calculate_average_value(self.rank_list))
         self.rank_aggregation(backward)
-
         path, path_id = file_repo.new_rank('Rank_Plus')
         self.save_rank(path)
         global_logger.info("Rank plus finished======================>")
@@ -126,12 +138,11 @@ class HRank(ABC):
                 self.rank_list[index] += en_alpha * self.info_flow_list[index]
                 en_alpha *= en_shrink
         elif backward == 2:
-            accumulate = 0
-            for index in range(tail, -1, -1):
-                self.rank_list[index] += en_alpha * self.info_flow_list[index]
-
-                accumulate += en_alpha * self.info_flow_list[index]
-                self.rank_list[index] += accumulate
+            self.accumulate[tail] = self.info_flow_list[tail]
+            for index in range(tail-1, -1, -1):
+                self.accumulate[index] += en_alpha * np.matmul(np.transpose(self.degrees[index]),
+                                                               self.info_flow_list[index+1])
+                self.rank_list[index] += en_alpha * self.accumulate[index]
         else:
             global_logger.info('Illegal backward manner.')
             exit(1)
@@ -171,124 +182,18 @@ class HRank(ABC):
         for i in range(epochs):
             self.wrapper.step_run(batch_limit=batch_limit, train=True)
 
-        # exp code
-        self.wrapper.container.store(f"{args.exp_name}_acc")
-        # exp code
+        # # exp code
+        # global_container.flash(f"{args.exp_name}_acc")
+        # # exp code
 
         global_logger.info("Warm up finished======================>")
 
-
-class VGG16HRank(HRank):
-    def __init__(self, wrapper: VWrapper) -> None:
-        super().__init__(wrapper)
-
-    def get_rank_plus(self):
+    def is_prune(self):
         pass
 
-    def structure_prune(self, pruning_rate: List[float]):
-        pass
-
-    # def load_params(self, rank_dict: OrderedDict = None):
-    #     last_select_index = None  # Conv index selected in the previous layer
-    #     if rank_dict is None:
-    #         if not self.rank_dict:
-    #             self.deserialize_rank()
-    #         iter_ranks = iter(self.rank_dict.values())
-    #     else:
-    #         iter_ranks = iter(rank_dict.values())
-    #     osd = self.checkpoint.state_dict()
-    #
-    #     for name, module in self.checkpoint.named_modules():
-    #         if self.wrapper.device.GPUs:
-    #             name = name.replace('module.', '')
-    #
-    #         if isinstance(module, nn.Conv2d):
-    #             # self.cp_model_sd[name + '.bias'] = osd[name + '.bias']
-    #             ori_weight = osd[name + '.weight']
-    #             cur_weight = self.cp_model_sd[name + '.weight']
-    #             ori_filter_num = ori_weight.size(0)
-    #             cur_filter_num = cur_weight.size(0)
-    #
-    #             if ori_filter_num != cur_filter_num:
-    #
-    #                 rank = next(iter_ranks)
-    #                 # preserved filter index based on rank
-    #                 select_index = np.argsort(rank)[ori_filter_num - cur_filter_num:]
-    #
-    #                 # traverse list in increase order(not necessary step)
-    #                 select_index.sort()
-    #
-    #                 if last_select_index is not None:
-    #                     for index_i, i in enumerate(select_index):
-    #                         for index_j, j in enumerate(last_select_index):
-    #                             self.cp_model_sd[name + '.weight'][index_i][index_j] = \
-    #                                 osd[name + '.weight'][i][j]
-    #                 else:
-    #                     for index_i, i in enumerate(select_index):
-    #                         self.cp_model_sd[name + '.weight'][index_i] = \
-    #                             osd[name + '.weight'][i]
-    #
-    #                 last_select_index = select_index
-    #
-    #             elif last_select_index is not None:
-    #                 for i in range(ori_filter_num):
-    #                     for index_j, j in enumerate(last_select_index):
-    #                         self.cp_model_sd[name + '.weight'][i][index_j] = \
-    #                             osd[name + '.weight'][i][j]
-    #
-    #             # retain origin channel
-    #             else:
-    #                 self.cp_model_sd[name + '.weight'] = ori_weight
-    #                 last_select_index = None
-    #
-    #         # elif isinstance(module, nn.Linear):
-    #         #     self.cp_model_sd[name + '.weight'] = osd[name + '.weight']
-    #         #     self.cp_model_sd[name + '.bias'] = osd[name + '.bias']
-    #
-    #     self.cp_model.load_state_dict(self.cp_model_sd)
-    #     torch.save(self.cp_model.state_dict(), 'test.pt')
-    #
-    # def init_cp_model(self, pruning_rate: List[float]):
-    #     self.cp_model = model_util.vgg_16_bn(pruning_rate)
-    #     model_util.initialize(self.cp_model)
-    #     self.cp_model_sd = self.cp_model.state_dict()
-
-
-# class ResNet56HRank(HRank):
-#
-#     def __init__(self) -> None:
-#         super().__init__()
-#         self.relu_cfg = [2, 6, 9, 13, 16, 19, 23, 26, 29, 33, 36, 39, 42]
-#
-#     def get_rank(self, random: bool = False):
-#         hook_cnt = 0
-#         cov_layer = wrapper.model.relu
-#         self.drive_hook(cov_layer, hook_cnt)
-#         hook_cnt += 1
-#
-#         # ResNet56 per block
-#         for i in range(3):
-#             # eval()!!!
-#             block = eval('self.wrapper.wrapper.layer%d' % (i + 1))
-#             for j in range(9):
-#                 for _relu in range(2):
-#                     if _relu == 0:
-#                         cov_layer = block[j].relu1
-#                     else:
-#                         cov_layer = block[j].relu2
-#                     self.drive_hook(cov_layer, loader, hook_cnt)
-#                     hook_cnt += 1
-#         file_repo.reset_rank_index()
-#
-#     def deserialize_rank(self):
-#         file_repo.reset_rank_index()
-#
-#     def init_cp_model(self, pruning_rate: List[float]):
-#         pass
-#
-#     def load_params(self):
-#         pass
-
-
-class ResNet50HRank(HRank):
-    pass
+    # step = self.rounds // 10
+    # if auto_inter:
+    #     self.rate_provider = RateProvider(pruning_rate=self.rate,
+    #                                       total_round=self.rounds,
+    #                                       interval=step)
+    #     self.inter_provider = IntervalProvider()

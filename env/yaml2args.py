@@ -108,15 +108,28 @@ class ArgRepo:
 
         self.info_norm = None
         self.backward = None
+        self.random_data = None
+        self.check_inter = None
+
+        # only exp valid
+        self.random_test = None
+        self.fedavg_test = None
+        self.fedprox_test = None
+
+        self.rank_plus = None
+        self.is_prune = None
+        self.fedprox = None
 
     def runtime_attr_placeholder(self):
         self.curt_base = None
+        self.curt_final = None
         self.rank_path = None
         self.rank_norm_path = None
         self.rank_plus_path = None
         self.num_classes = None
         self.running_base_path = None
         self.running_plus_path = None
+        self.running_final_path = None
         self.prune_rate = None
 
     @property
@@ -124,7 +137,10 @@ class ArgRepo:
         if self.curt_base:
             return f"{self._exp_name}-base"
         else:
-            return f"{self._exp_name}-plus"
+            if self.curt_final is None or not self.curt_final:
+                return f"{self._exp_name}-plus"
+            else:
+                return f"{self._exp_name}-final"
 
     def activate(self, strict: bool = False):
         options = self.parse_args()

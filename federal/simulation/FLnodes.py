@@ -20,12 +20,19 @@ class FLMaster(ABC):
         self.cell = master_cell
         self.merge = FedAvg(master_cell.access_model().state_dict())
 
+        self.rounds = None
+        self.curt_round = None
+        self.rate = None
+
+        self.rate_provider = None
+        self.inter_provider = None
+
     def schedule_strategy(self) -> List:
         indices = random.sample(range(0, self.workers), self.plan)
         return indices
 
     @abstractmethod
-    def union_run(self, rounds: int):
+    def union_run(self, random_data: bool, auto_inter: bool):
         pass
 
     @abstractmethod
@@ -42,6 +49,10 @@ class FLMaster(ABC):
 
     @abstractmethod
     def drive_workers(self):
+        pass
+
+    @abstractmethod
+    def master_prune(self, random_data: bool, auto_inter: bool):
         pass
 
 

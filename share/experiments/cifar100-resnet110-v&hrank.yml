@@ -1,0 +1,22 @@
+# resource config
+exp_name: cifar100-resnet110-vrank
+
+# checkpoint config
+model: resnet110
+pre_train: True
+
+# dataset config
+dataset: cifar100
+batch_size: 128
+
+# optimizer config
+# optim: sgd
+optim: sgd
+learning_rate: 0.1
+
+# scheduler config
+scheduler: step_lr
+min_lr: 0.0
+
+en_alpha: 0.4
+

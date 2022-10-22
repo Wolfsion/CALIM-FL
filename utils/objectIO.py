@@ -65,6 +65,7 @@ def compare_obj(obj1, obj2) -> bool:
 
 
 def str_save(text: str, f: str):
+    f = os.path.expanduser(f)
     with open(f, "w") as opened_f:
         opened_f.write(text)
 

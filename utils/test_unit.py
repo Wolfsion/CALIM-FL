@@ -2,7 +2,7 @@ from random import random
 
 from utils.Cleaner import FileCleaner
 from utils.Visualizer import HRankBoard
-from env.running_env import args, file_repo
+from env.running_env import args, file_repo, global_container
 
 
 def random_list(length=100):
@@ -47,6 +47,15 @@ def res_and_log_clean():
     cleaner.clear_files()
 
 
+def test_container():
+    global_container.flash('test', 1)
+    global_container.flash('test', 2)
+    global_container.flash('test', 3)
+
+    print(f"Test{global_container['test']}")
+    print(f"=====")
+
+
 def main():
-    res_and_log_clean()
+    test_container()
 

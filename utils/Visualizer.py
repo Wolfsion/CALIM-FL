@@ -31,14 +31,25 @@ def text_info(title: str, x_label: str, y_label: str):
     k:kernel density estimation-2
     r:rug-1
 '''
+
+
+def adjust_font(ax, x, y, t):
+    font_size = 30
+    plt.legend(loc=2, prop={'size': 40})
+    # ax.set_xticklabels(x_p, fontsize=font_size)
+    # ax.set_yticklabels(y_p, fontsize=font_size)
+    ax.set_ylabel(x, fontsize=font_size)
+    ax.set_xlabel(y, fontsize=font_size)
+    ax.set_title(t, fontsize=font_size)
+
+
 class HRankBoard:
     def __init__(self):
         plt.switch_backend('agg')
-        sns.set(style='darkgrid', color_codes=True)
-        plt.figure(figsize=(20, 15))
-        self.title = 'vgg16-hrank'
+        sns.set(style='darkgrid', color_codes=True, font_scale=1)
 
     def simp_rank_img(self, path: str):
+        plt.figure(figsize=(20, 15))
         hrank_list = pickle_load(path)
         hr = []
         for rank in hrank_list:
@@ -59,15 +70,19 @@ class HRankBoard:
     # key->value; key:str value:str
     # key:acc_name, value:acc_txt_filepath
     def simp_acc_compare_img(self, **paths):
+        x_label = "Epoch"
+        y_label = "Acc"
+        title = "Acc Compare"
+
         pd_ori_data = []
         for key, path in paths.items():
             pickle_obj = pickle_load(path)
             sub_list = [[num, ind + 1, key] for ind, num in enumerate(pickle_obj)]
             pd_ori_data.extend(sub_list)
-        df = pd.DataFrame(pd_ori_data, columns=['Acc', 'Epoch', 'Class'])
-        sns.set(style='darkgrid', color_codes=True)
-        sns.lineplot(data=df, x="Epoch", y="Acc", hue="Class")
-        plt.savefig(file_repo.new_img("Acc compare")[0])
+        df = pd.DataFrame(pd_ori_data, columns=[y_label, x_label, 'Class'])
+        ax = sns.lineplot(data=df, x=x_label, y=y_label, hue="Class", style="Class", markers=True)
+        # adjust_font(ax, x_label, y_label, title)
+        plt.savefig(file_repo.new_img("Acc-compare")[0])
         plt.clf()
 
 

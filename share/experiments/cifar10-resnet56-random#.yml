@@ -1,15 +1,17 @@
 # resource config
-exp_name: cifar100-mobilenetV2
+exp_name: cifar10-resnet56-random
 
 # checkpoint config
-model: mobilenetV2
+model: resnet56
+pre_train: True
 
 # dataset config
-dataset: cifar100
-batch_size: 128
+dataset: cifar10
+batch_size: 32
 
 # optimizer config
-optim: sgd
+# optim: sgd
+optim: sgd_pfl
 learning_rate: 0.01
 
 # scheduler config
@@ -17,15 +19,20 @@ scheduler: warmup_cos_lr
 min_lr: 0.0
 warm_steps: 5
 
+
 # federal config
-non_iid: hetro
+non_iid: hetero
 workers: 100
 active_workers: 10
-federal_round: 100
+
+federal_round: 20
+check_inter: 5
+random_test: True
 
 ## federal simulation
 # local_epoch: 5
 
 ## center train
-local_epoch: 300
-test_batch_limit: 5
+local_epoch: 10
+test_batch_limit: 16
+

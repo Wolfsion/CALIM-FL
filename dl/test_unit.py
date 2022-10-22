@@ -78,5 +78,9 @@ def total_auto_line():
     pass
 
 
+def hrank():
+    pass
+
+
 def main():
     plus_ori_compare()

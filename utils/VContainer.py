@@ -1,6 +1,4 @@
 from collections import OrderedDict
-from env.running_env import file_repo, args
-from utils.objectIO import pickle_mkdir_save
 
 
 class VContainer:
@@ -20,16 +18,5 @@ class VContainer:
             assert type(self.container[key][0]) == type(element), self.ERROR_MESS1
             self.container[key].append(element)
 
-    def store(self, key: str):
-        path, path_id = file_repo.new_inter(key)
-        pickle_mkdir_save(self.container[key], path)
-
-        # if key.find('acc') != -1:
-        if args.curt_base:
-            args.running_base_path = path
-        else:
-            args.running_plus_path = path
-
-    def store_all(self):
-        for key in self.keys:
-            self.store(key)
+    def __getitem__(self, item):
+        return self.container[item]

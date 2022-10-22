@@ -8,21 +8,30 @@ if __name__ == "__main__":
                         dest='config',
                         type=str,
                         default='e1')
-    parser.add_argument('-s', '--federal_simulation',
-                        help='Federal simulation is True, the single is False.',
-                        dest='env',
-                        type=bool,
-                        default=True)
-    yml_arg = parser.parse_args()
-    auto_config(yml_arg.config)
+    parser.add_argument('-s', '--single_simulation',
+                        action='store_true',
+                        help='Federal simulation is False, the single is True.',
+                        dest='env')
+    parser.add_argument('-c', '--clean_files',
+                        action='store_true',
+                        help='Log files and others will be clean.',
+                        dest='clean')
+    init_arg = parser.parse_args()
+    # !!!不要在调用这行命令前 引入running_env
+    auto_config(init_arg.config)
 
     from dl.test_unit import main as dl_main
     from federal.test_unit import main as fl_main
 
-    if yml_arg.env:
-        fl_main()
-    else:
+    if init_arg.env:
         dl_main()
+    else:
+        fl_main()
 
     # from utils.test_unit import main as statistics_main
     # # statistics_main()
+
+    if init_arg.clean:
+        from utils.Cleaner import FileCleaner
+        cleaner = FileCleaner(remain_days=7)
+        cleaner.clear_files()

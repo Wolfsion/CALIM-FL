@@ -60,14 +60,18 @@ def model_device(model: nn.Module):
         return CPU
 
 
-def dict_diff(dict1: dict, dict2: dict):
+def dict_diff(dict1: dict, dict2: dict) -> bool:
+    is_same = True
     for (k1, v1), (k2, v2) in zip(dict1.items(), dict2.items()):
         if k1 != k2:
+            is_same = False
             global_logger.info('Key beq:dict1_key:', k1)
             global_logger.info('Key beq:dict2_key:', k2)
         else:
             if not v1.equal(v2):
+                is_same = False
                 global_logger.info(f"The value of key:{k1} is not equal.")
+    return is_same
 
 
 def pre_train_model(model_obj: nn.Module, path_pt: str):

@@ -1,3 +1,4 @@
+import gc
 from copy import deepcopy
 from typing import List, Iterator
 
@@ -55,7 +56,8 @@ class VWrapper:
         self.latest_loss = 0.0
         self.curt_batch = 0
         self.curt_epoch = 0
-        self.container = VContainer()
+
+        self.seed = 2022
 
     def default_config(self):
         pass
@@ -104,10 +106,11 @@ class VWrapper:
         label_size = label.size()
         return data_size, label_size
 
-    def curt_state_info(self):
-        pass
+    # def curt_state_info(self):
+    #     global_logger.info("Not support.")
 
     def random_run(self, batch_limit: int):
+        torch.manual_seed(self.seed)
         with torch.no_grad():
             global_logger.info('Using random data.======>')
             data_size, label_size = self.running_scale()
@@ -116,6 +119,7 @@ class VWrapper:
                 targets = torch.randn(label_size)
                 inputs, labels = self.device.on_tensor(inputs, targets)
                 pred = self.model(inputs)
+        self.seed += 1
 
     # 当需要投喂测试集时，传入dataloader
     # 实现random数据投喂
@@ -167,8 +171,10 @@ class VWrapper:
             self.curt_batch += 1
 
         if train:
+            gc.collect()
+            torch.cuda.empty_cache()
             self.curt_epoch += 1
-            self.container.flash(f"{args.exp_name}_acc", self.latest_acc)
+            global_container.flash(f"{args.exp_name}_acc", self.latest_acc)
             self.scheduler_step()
 
         return correct, total, self.latest_loss
@@ -219,9 +225,13 @@ class VWrapper:
         self.device.load_model(checkpoint[model_key])
 
     def valid_performance(self, loader: tdata.dataloader):
-        inputs = torch.rand(*self.running_scale())
-        cpu_model = deepcopy(self.device.access_model()).cpu()
-        flops, params = profile(cpu_model, inputs=(inputs,))
+        # inputs = torch.rand(*(self.running_scale()[0]))
+        # cpu_model = deepcopy(self.device.access_model()).cpu()
+        # flops, params = profile(cpu_model, inputs=(inputs,))
+        inputs = torch.rand(*(self.running_scale()[0])).cuda()
+        gpu_model = deepcopy(self.device.access_model()).cuda()
+        flops, params = profile(gpu_model, inputs=(inputs,))
+
         time_start = timer()
         correct, total, test_loss = self.step_run(valid_limit, loader=loader)
         time_cost = timer() - time_start
@@ -231,7 +241,7 @@ class VWrapper:
         global_logger.info('Loss: %.3f | Acc: %.3f%% (%d/%d)'
                            % (test_loss, 100. * correct / total, correct, total))
 
-        global_logger.info('Time cost: %.3f | FLOPs: %d | Params: %d'
+        global_logger.info('Time cost: %.6f | FLOPs: %d | Params: %d'
                            % (time_cost, flops, params))
 
         global_logger.info('Total params: %d | Trainable params: %d'

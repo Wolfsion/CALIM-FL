@@ -2,6 +2,7 @@
 # Default Env (refer)
 ###
 import argparse
+import os
 
 exp1_config = r'share/cifar10-vgg16.yml'
 exp2_config = r'share/cifar10-resnet56.yml'
@@ -19,17 +20,17 @@ exp4_config = r'share/cifar100-mobilenetV2.yml'
 # entire path
 datasets_base = r'~/la/datasets'
 
-test_config = r'share/cifar10-center.yml'
+test_config = r'share/default_config.yml'
 
 vgg16_model = r'res/checkpoint/vgg/vgg_16_bn.pt'
 resnet56_model = r'res/checkpoint/resnet/resnet_56.pt'
 resnet110_model = r'res/checkpoint/resnet/ResNet110.snap'
 mobilenetv2_model = r'res/checkpoint/mobilenet/MobileNetV2.snap'
 
-vgg16_ranks = r'res/milestone/vgg_16_bn/Norm_Rank---08.13.npy'
-resnet56_ranks = r'res/milestone/resnet_56/none.npy'
-resnet110_ranks = r'res/milestone/ResNet110/none.npy'  # Norm_Rank---08.14.npy
-mobilenetv2_ranks = r'res/milestone/MobileNetV2/Norm_Rank---08.13.npy'
+vgg16_ranks = r'res/milestone/vgg_16_bn/Norm_Rank---10.13.npy'
+resnet56_ranks = r'res/milestone/resnet_56/Norm_Rank---09.25.npy'
+resnet110_ranks = r'res/milestone/ResNet110/Norm_Rank---09.25.npy'
+mobilenetv2_ranks = r'res/milestone/MobileNetV2/Norm_Rank---09.25.npy'
 
 
 def auto_config(option: str):
@@ -43,8 +44,11 @@ def auto_config(option: str):
     elif option == 'e4':
         test_config = exp4_config
     else:
-        print('Not support config option.')
-        exit(1)
+        if os.access(option, os.R_OK):
+            test_config = option
+        else:
+            print('Can not access to config file.')
+            exit(1)
 
 ###
 # Custom Env (to fill)
