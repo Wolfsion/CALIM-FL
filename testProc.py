@@ -126,7 +126,19 @@ def test_resnet():
     print(b.size())
 
 
+def dem_sum():
+    import torch
+    params = torch.randn(3, 4, 5, 6)
+    filters = params.shape[0]
+    channels = params.shape[1]
+    degree = torch.tensor([torch.sum(torch.abs(params[i, j, :, :])).item()
+                           for i in range(filters) for j in range(channels)])
+
+    print(degree.size())
+    degree = degree.reshape(params.size()[0:2])
+    print(degree.size())
+
+
 if __name__ == "__main__":
-    from dl.compress.test_unit import main
-    main()
+    dem_sum()
     print("----------------------")

@@ -140,7 +140,7 @@ class HRank(ABC):
         elif backward == 2:
             self.accumulate[tail] = self.info_flow_list[tail]
             for index in range(tail-1, -1, -1):
-                self.accumulate[index] += en_alpha * np.matmul(np.transpose(self.degrees[index]),
+                self.accumulate[index] += en_alpha * np.matmul(np.transpose(self.info_flow_list[index]),
                                                                self.info_flow_list[index+1])
                 self.rank_list[index] += en_alpha * self.accumulate[index]
         else:
